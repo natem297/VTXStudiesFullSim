@@ -10,6 +10,7 @@ events = podio_reader.get("events")
 layer_radii = [14, 23, 34.5, 141, 316]
 true_radii = [1.37, 2.37, 3.4, 13, 31.5]
 disk_z = [303, 635, 945, -303, -635, -945]
+particles = {11: "electron", -11: "positron"}
 
 def phi(x,y):
     """
@@ -56,8 +57,10 @@ def z_coord(hit):
             return z
     raise ValueError(f"Not close enough to any of the disks {true_z}")
 
-hit_map = {coord: {cos: {azimuthal: [0] * 100 for azimuthal in range(0, 360, 3)} for cos in range(-50, 50, 2)} for coord in layer_radii + disk_z}
-# hit_map = {coord: {polar: {azimuthal: [0] * 100 for azimuthal in range(0, 360, 3)} for polar in range(0, 180, 3)} for coord in layer_radii + disk_z}
+hit_map = {coord: {cos: {azimuthal: {particle: [0] * 100 \
+            for particle in particles.values()} for azimuthal in range(0, 360, 3)} \
+                for cos in range(-50, 50, 2)} for coord in layer_radii + disk_z}
+
 for i in range(100):
     event = events[i]
     hits = {coord: [] for coord in layer_radii + disk_z}
@@ -72,36 +75,37 @@ for i in range(100):
 
     for coord in layer_radii + disk_z:
         for hit in hits[coord]:
-            # th = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z) * (180 / math.pi)
+            
+            mc = hit.getMCParticle()
+            pdg = mc.getPDG()
+            if pdg in particles:
+                particle = particles[pdg]
+            else:
+                continue
             cos_th = math.cos(theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z))
             ph = phi(hit.getPosition().x, hit.getPosition().y) * (180 / math.pi)
-            hit_map[coord][int(((50 * cos_th) // 2) * 2)][int((ph // 3) * 3)][i] += 1
-            # hit_map[coord][int((th // 3) * 3)][int((ph // 3) * 3)][i] += 1
+            hit_map[coord][int(((50 * cos_th) // 2) * 2)][int((ph // 3) * 3)][particle][i] += 1
+
 for layer_index in range(5):
+    for particle in particles.values():
 
-    r = true_radii[layer_index]
-    hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Hits", 120, 0, 360, 50, -1, 1)
-    # hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Hits", 120, 0, 360, 60, 0, 180)
-    hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Hits Per Area (cm ^-2);Azimuthal Angle (deg);Cosine Theta")
+        r = true_radii[layer_index]
+        hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits", 120, 0, 360, 50, -1, 1)
+        hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits Per Area (cm ^-2);Azimuthal Angle (deg);Cosine Theta")
 
-    for cos_th in range(-50, 50, 2):
-    # for th in range(3, 180, 3):
-        polar = math.acos((cos_th + 1) / 50)
-        # polar = th * (math.pi / 180)
-        delta_angle = math.pi/60
-        area_num = (math.sin(delta_angle) * delta_angle) * (r ** 2)
-        # area_den = math.sin(polar + (delta_angle / 2)) ** 2
-        area_den = math.sin(polar) ** 2
-        area = area_num / area_den
-        for azimuthal in range(0, 360, 3):
-            hits = np.mean(hit_map[layer_radii[layer_index]][cos_th][azimuthal])
-            # hits = np.mean(hit_map[layer_radii[layer_index]][th][azimuthal])
-            hist.SetBinContent((azimuthal // 3) + 1, (cos_th // 2) + 26, hits / area)
-            # hist.SetBinContent((azimuthal // 3) + 1, (th // 3) + 1, hits / area)
+        for cos_th in range(-50, 50, 2):
+            polar = math.acos((cos_th + 1) / 50)
+            delta_angle = math.pi/60
+            area_num = (math.sin(delta_angle) * delta_angle) * (r ** 2)
+            area_den = math.sin(polar) ** 2
+            area = area_num / area_den
+            for azimuthal in range(0, 360, 3):
+                hits = np.mean(hit_map[layer_radii[layer_index]][cos_th][azimuthal][particle])
+                hist.SetBinContent((azimuthal // 3) + 1, (cos_th // 2) + 26, hits / area)
 
-    hist.SetStats(0)
-    canvas = ROOT.TCanvas("hit map", f"Guinea Pig Layer {layer_index + 1} Hits Per Area")
-    canvas.SetRightMargin(0.12)
-    hist.Draw("colz")
-    canvas.Update()
-    canvas.SaveAs(f"../plots/hit_rates/gp_layer{layer_index + 1}_hit_rate.png")
+        hist.SetStats(0)
+        canvas = ROOT.TCanvas("hit map", f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits Per Area")
+        canvas.SetRightMargin(0.12)
+        hist.Draw("colz")
+        canvas.Update()
+        canvas.SaveAs(f"../plots/hit_rates/gp_layer{layer_index + 1}_{particle}_hit_rate.png")
