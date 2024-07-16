@@ -81,82 +81,82 @@ def delta_squared(hit1, hit2):
 
     return delta_t**2 + delta_x**2 + delta_y**2 + delta_z**2
 
-# def cluster_size(particle, clusters, detector_index, detector, first_hit = None, monte_carlo = False):
-#     """
-#     Finds trajectory of a given particle by finding hits with a delta squared below a certain
-#     threshold.  Then recursively calls using the last hit to find matching hits in further detectors.
-#     Inputs:
-#         particle: MCParticle or SimTrackerHit representing most recent object in trajectory.
-#         trajectory: list starting with MCParticle followed by SimTrackerHit objects.
-#         detector_index: int, index of detector to be explored next.
-#         detector: string representing which detector is being explored.
-#         monte_carlo: boolean representing whether the particle is an MCParticle.
-#     Outputs:
-#         trajectory: list starting with MCParticle followed by SimTrackerHit objects.
-#     """
-#     if monte_carlo:
-#         xi = particle.getVertex().x
-#         yi = particle.getVertex().y
-#         zi = particle.getVertex().z
-#     else:
-#         xi = particle.getPosition().x
-#         yi = particle.getPosition().y
-#         zi = particle.getPosition().z
+def cluster_size(particle, clusters, detector_index, detector, first_hit = None, monte_carlo = False):
+    """
+    Finds trajectory of a given particle by finding hits with a delta squared below a certain
+    threshold.  Then recursively calls using the last hit to find matching hits in further detectors.
+    Inputs:
+        particle: MCParticle or SimTrackerHit representing most recent object in trajectory.
+        trajectory: list starting with MCParticle followed by SimTrackerHit objects.
+        detector_index: int, index of detector to be explored next.
+        detector: string representing which detector is being explored.
+        monte_carlo: boolean representing whether the particle is an MCParticle.
+    Outputs:
+        trajectory: list starting with MCParticle followed by SimTrackerHit objects.
+    """
+    if monte_carlo:
+        xi = particle.getVertex().x
+        yi = particle.getVertex().y
+        zi = particle.getVertex().z
+    else:
+        xi = particle.getPosition().x
+        yi = particle.getPosition().y
+        zi = particle.getPosition().z
 
-#     px = particle.getMomentum().x
-#     py = particle.getMomentum().y
-#     pz = particle.getMomentum().z
+    px = particle.getMomentum().x
+    py = particle.getMomentum().y
+    pz = particle.getMomentum().z
 
-#     # if first_hit:
-#     #     theta_i = theta(xi, yi, zi)
-#     #     phi_i = phi(xi, yi)
-#     # else:
-#     theta_i = theta(px, py, pz)
-#     phi_i = phi(px, py)
+    # if first_hit:
+    #     theta_i = theta(xi, yi, zi)
+    #     phi_i = phi(xi, yi)
+    # else:
+    theta_i = theta(px, py, pz)
+    phi_i = phi(px, py)
 
-#     if detector == "barrel":
-#         coord = layer_radii[detector_index]
-#     else:
-#         coord = disk_z[detector_index]
+    if detector == "barrel":
+        coord = layer_radii[detector_index]
+    else:
+        coord = disk_z[detector_index]
 
-#     # if first_hit:
-#     #     new_hit = particle
-#     # else:
-#     new_hit = None
+    # if first_hit:
+    #     new_hit = particle
+    # else:
+    new_hit = None
 
-#     for hit in hits[coord]:
+    for hit in hits[coord]:
 
-#         # if first_hit:
-#         #     theta_i_p = theta(px, py, pz)
-#         #     phi_i_p = phi(px, py)
-#         #     theta_f_p = theta(hit.getMomentum().x, hit.getMomentum().y, hit.getMomentum().z)
-#         #     phi_f_p = phi(hit.getMomentum().x, hit.getMomentum().y)
-#         #     delta_p = (theta_f_p - theta_i_p)**2 + (min(abs(phi_f_p - phi_i_p), 2*math.pi - abs(phi_f_p - phi_i_p)))**2
+        # if first_hit:
+        #     theta_i_p = theta(px, py, pz)
+        #     phi_i_p = phi(px, py)
+        #     theta_f_p = theta(hit.getMomentum().x, hit.getMomentum().y, hit.getMomentum().z)
+        #     phi_f_p = phi(hit.getMomentum().x, hit.getMomentum().y)
+        #     delta_p = (theta_f_p - theta_i_p)**2 + (min(abs(phi_f_p - phi_i_p), 2*math.pi - abs(phi_f_p - phi_i_p)))**2
 
-#         #     theta_f = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z)
-#         #     phi_f = phi(hit.getPosition().x, hit.getPosition().y)
-#         #     delta_pos = (theta_f - theta_i)**2 + (min(abs(phi_f - phi_i), 2*math.pi - abs(phi_f - phi_i)))**2
+        #     theta_f = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z)
+        #     phi_f = phi(hit.getPosition().x, hit.getPosition().y)
+        #     delta_pos = (theta_f - theta_i)**2 + (min(abs(phi_f - phi_i), 2*math.pi - abs(phi_f - phi_i)))**2
 
-#         #     delta = delta_p + delta_pos
-#         # else:
-#         delta = delta_squared(theta_i, phi_i, xi, yi, zi, hit)
+        #     delta = delta_p + delta_pos
+        # else:
+        delta = delta_squared(theta_i, phi_i, xi, yi, zi, hit)
 
-#         if delta < 0.01:
-#             clusters[coord] += 1
-#             new_hit = hit
-#             if first_hit is None:
-#                 first_hit = hit
+        if delta < 0.01:
+            clusters[coord] += 1
+            new_hit = hit
+            if first_hit is None:
+                first_hit = hit
 
-#     if detector == "barrel" and detector_index == 4:
-#         return clusters, first_hit
-#     elif detector == "disk" and detector_index == 5:
-#         return clusters, first_hit
-#     # elif detector == "disk_r" and detector_index == 5:
-#     #     return clusters
-#     elif new_hit is None:
-#         return cluster_size(particle, clusters, detector_index + 1, detector, first_hit, monte_carlo)
-#     else:
-#         return cluster_size(new_hit, clusters, detector_index + 1, detector, first_hit)
+    if detector == "barrel" and detector_index == 4:
+        return clusters, first_hit
+    elif detector == "disk" and detector_index == 5:
+        return clusters, first_hit
+    # elif detector == "disk_r" and detector_index == 5:
+    #     return clusters
+    elif new_hit is None:
+        return cluster_size(particle, clusters, detector_index + 1, detector, first_hit, monte_carlo)
+    else:
+        return cluster_size(new_hit, clusters, detector_index + 1, detector, first_hit)
 
 all_clusters = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
 all_deltas = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
