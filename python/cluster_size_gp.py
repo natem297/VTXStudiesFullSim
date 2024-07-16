@@ -141,7 +141,7 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
         # else:
         delta = delta_squared(theta_i, phi_i, xi, yi, zi, hit)
 
-        if delta < 0.01:
+        if delta < 0.001:
             matches[coord] += 1
             new_hit = hit
             if first_hit is None:
@@ -158,7 +158,7 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
 
 all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
 # all_deltas = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
-for i in range(100):
+for i in range(10):
     print(f"starting event {i}")
     event = events[i]
     hits = {coord: [] for coord in layer_radii + disk_z}
