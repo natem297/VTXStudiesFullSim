@@ -55,31 +55,31 @@ def theta(x,y,z):
     """
     return math.acos(z/np.sqrt(x**2 + y**2 + z**2))
 
-def delta_squared(hit1, hit2):
+def delta_squared(theta_i, phi_i, xi, yi, zi, hit):
     """
-    Calculates delta of 2 hits.
+    Calculates delta of a particle-hit pair.
     Inputs:
-        hit1, hit2, SimTracker Hit object.
-    Outputs:
-        delta, float.
+        hit, SimTracker Hit object.
+        theta_i, phi_i, floats representing direction of mc particle.
+        xi, yi, zi, floats representing position of mc particle.
+    Outputs: delta, float.
     """
 
-    ti = hit1.getTime()
-    xi = hit1.getPosition().x
-    yi = hit1.getPosition().y
-    zi = hit1.getPosition().z
+    xf = hit.getPosition().x
+    yf = hit.getPosition().y
+    zf = hit.getPosition().z
 
-    tf = hit2.getTime()
-    xf = hit2.getPosition().x
-    yf = hit2.getPosition().y
-    zf = hit2.getPosition().z
-
-    delta_t = tf - ti
     delta_x = xf - xi
     delta_y = yf - yi
     delta_z = zf - zi
 
-    return delta_t**2 + delta_x**2 + delta_y**2 + delta_z**2
+    theta_f = theta(delta_x, delta_y, delta_z)
+    phi_f = phi(delta_x, delta_y)
+
+    delta_theta = theta_f - theta_i
+    delta_phi = min(abs(phi_f - phi_i), 2*math.pi - abs(phi_f - phi_i))
+
+    return delta_theta**2 + delta_phi**2
 
 def cluster_size(particle, clusters, detector_index, detector, first_hit = None, monte_carlo = False):
     """
