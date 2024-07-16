@@ -174,29 +174,6 @@ for i in range(100):
             else:
                 hits[z_coord(hit)].append(hit)
 
-    for coord in layer_radii + disk_z:
-        visited_hits = set()
-
-        for hit1 in hits[coord]:
-
-            if hit1 in visited_hits:
-                continue
-
-            visited_hits.add(hit1)
-            cluster_size = 1
-            polar = theta(hit1.getPosition().x, hit1.getPosition().y, hit1.getPosition().z) * (180 / math.pi)
-
-            for hit2 in hits[coord]:
-
-                if hit2 in visited_hits:
-                    continue
-                elif hit1.getMCParticle() == hit2.getMCParticle():
-                    cluster_size += 1
-                    visited_hits.add(hit2)
-                    all_deltas[coord][int((polar // 3) * 3)].append(np.sqrt(delta_squared(hit1, hit2)))
-
-            all_clusters[coord][int((polar // 3) * 3)].append(cluster_size)
-
 for layer_index in range(5):
     # print(f"Cluster size for layer {layer_index + 1}: {all_clusters[layer_radii[layer_index]]}")
     hist = ROOT.TH1F("size", f"Guinea Pig Layer {layer_index + 1} Average Cluster Size", 60, 0, 180)
