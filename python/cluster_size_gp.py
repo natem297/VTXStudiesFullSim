@@ -81,7 +81,7 @@ def delta_squared(theta_i, phi_i, xi, yi, zi, hit):
 
     return delta_theta**2 + delta_phi**2
 
-def cluster_size(particle, clusters, detector_index, detector, first_hit = None, monte_carlo = False):
+def match_counter(particle, matches, detector_index, detector, first_hit = None, monte_carlo = False):
     """
     Finds trajectory of a given particle by finding hits with a delta squared below a certain
     threshold.  Then recursively calls using the last hit to find matching hits in further detectors.
@@ -142,24 +142,22 @@ def cluster_size(particle, clusters, detector_index, detector, first_hit = None,
         delta = delta_squared(theta_i, phi_i, xi, yi, zi, hit)
 
         if delta < 0.01:
-            clusters[coord] += 1
+            matches[coord] += 1
             new_hit = hit
             if first_hit is None:
                 first_hit = hit
 
     if detector == "barrel" and detector_index == 4:
-        return clusters, first_hit
+        return matches, first_hit
     elif detector == "disk" and detector_index == 5:
-        return clusters, first_hit
-    # elif detector == "disk_r" and detector_index == 5:
-    #     return clusters
+        return matches, first_hit
     elif new_hit is None:
-        return cluster_size(particle, clusters, detector_index + 1, detector, first_hit, monte_carlo)
+        return match_counter(particle, matches, detector_index + 1, detector, first_hit, monte_carlo)
     else:
-        return cluster_size(new_hit, clusters, detector_index + 1, detector, first_hit)
+        return match_counter(new_hit, matches, detector_index + 1, detector, first_hit)
 
-all_clusters = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
-all_deltas = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
+all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
+# all_deltas = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
 for i in range(100):
     print(f"starting event {i}")
     event = events[i]
@@ -174,37 +172,52 @@ for i in range(100):
             else:
                 hits[z_coord(hit)].append(hit)
 
+    for particle in event.get("MCParticles"):
+
+        if particle.getVertex().x**2 + particle.getVertex().y**2 > 169:
+            continue
+
+        barrel_matches, first_hit = match_counter(particle, {r: 0 for r in layer_radii}, 0, "barrel", None, True)
+        if first_hit is None:
+            continue
+
+        th = theta(first_hit.getPosition().x, first_hit.getPosition().y, first_hit.getPosition().z) * (180 / math.pi)
+
+        for r in barrel_matches:
+            if barrel_matches[r] != 0:
+                all_matches[r][int((th // 3) * 3)].append(barrel_matches[r])
+
 for layer_index in range(5):
-    # print(f"Cluster size for layer {layer_index + 1}: {all_clusters[layer_radii[layer_index]]}")
-    hist = ROOT.TH1F("size", f"Guinea Pig Layer {layer_index + 1} Average Cluster Size", 60, 0, 180)
+    # print(f"Number of matches for layer {layer_index + 1}: {all_matches[layer_radii[layer_index]]}")
+    hist = ROOT.TH1F("size", f"Guinea Pig Layer {layer_index + 1} Average Number of Matches", 60, 0, 180)
     for ang in range(0, 180, 3):
-        if not all_clusters[layer_radii[layer_index]][ang]:
+        if not all_matches[layer_radii[layer_index]][ang]:
             hist.SetBinContent((ang//3) + 1, 0)
         else:
-            hist.SetBinContent((ang//3) + 1, np.mean(all_clusters[layer_radii[layer_index]][ang]))
+            hist.SetBinContent((ang//3) + 1, np.mean(all_matches[layer_radii[layer_index]][ang]))
     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-    hist.GetYaxis().SetTitle("Average Cluster Size")
+    hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
     hist.SetStats(0)
-    canvas = ROOT.TCanvas("size", f"Guinea Pig Layer {layer_index + 1} Average Cluster Size")
+    canvas = ROOT.TCanvas("size", f"Guinea Pig Layer {layer_index + 1} Average Number of Matches")
     hist.Draw()
     canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test.png")
+    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test2.png")
 
-for disk_index in range(6):
-    hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Cluster Size", 60, 0, 180)
-    for ang in range(0, 180, 3):
-        if not all_clusters[disk_z[disk_index]][ang]:
-            hist.SetBinContent((ang//3) + 1, 0)
-        else:
-            hist.SetBinContent((ang//3) + 1, np.mean(all_clusters[disk_z[disk_index]][ang]))
-    hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-    hist.GetYaxis().SetTitle("Average Cluster Size")
-    hist.SetStats(0)
-    canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Cluster Size")
-    hist.Draw()
-    canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
+# for disk_index in range(6):
+#     hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
+#     for ang in range(0, 180, 3):
+#         if not all_matches[disk_z[disk_index]][ang]:
+#             hist.SetBinContent((ang//3) + 1, 0)
+#         else:
+#             hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
+#     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
+#     hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
+#     hist.SetStats(0)
+#     canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
+#     hist.Draw()
+#     canvas.Update()
+#     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
 
-for ang in all_deltas[14]:
-    print(f"Mean delta for layer 1, angle {ang}: {np.mean(all_deltas[14][ang])}")
-    print(f"Standard deviation: {np.std(all_deltas[14][ang])}")
+# `for ang in all_deltas[14]:
+#     print(f"Mean delta for layer 1, angle {ang}: {np.mean(all_deltas[14][ang])}")
+#     print(f"Standard deviation: {np.std(all_deltas[14][ang])}")`
