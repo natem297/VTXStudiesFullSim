@@ -11,7 +11,7 @@ layer_radii = [14, 23, 34.5, 141, 316]
 true_radii = [1.37, 2.37, 3.56, 13, 31.5]
 disk_z = [303, 635, 945, -303, -635, -945]
 particles = {11: "electron", -11: "positron"}
-z_ranges = {14: 96, 23: 160, 34.5: 252}
+z_ranges = {14: 96, 23: 160, 34.5: 256}
 phi_bins = {14: 24, 23: 15, 34.5: 10}
 
 def phi(x,y):
@@ -60,7 +60,7 @@ def z_coord(hit):
     raise ValueError(f"Not close enough to any of the disks {true_z}")
 
 hit_map = {coord: {z: {azimuthal: [0] * 100 for azimuthal in range(0, 360, phi_bins[coord])} \
-            for z in range(-z_ranges[coord], z_ranges[coord], 32)} for coord in layer_radii + disk_z}
+            for z in range(-z_ranges[coord], z_ranges[coord], 32)} for coord in layer_radii[:3]}
 
 for i in range(100):
     event = events[i]
@@ -76,7 +76,7 @@ for i in range(100):
 
     for coord in layer_radii[:3]:
         for hit in hits[coord]:
-            if hit.getEDep() < 0.000002:
+            if hit.getEDep() < 0.000002 or abs(hit.getPosition().z) > z_ranges[coord]:
                 continue
 
             z = hit.getPosition().z
@@ -86,7 +86,8 @@ for i in range(100):
 for layer_index in range(3):
 
     r = layer_radii[layer_index]
-    hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", 120, 0, 360, 50, -1, 1)
+    hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", \
+                    (2 * z_ranges[r]) // 32, -z_ranges[r], z_ranges[r], 360 // phi_bins[r], 0, 360)
     hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Module Hits per Bunch Crossing;z (mm);Azimuthal Angle (deg)")
 
     for z in range(-z_ranges[r], z_ranges[r], 32):
@@ -98,5 +99,4 @@ for layer_index in range(3):
     canvas = ROOT.TCanvas("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits")
     hist.Draw("colz")
     canvas.Update()
-    # canvas.SaveAs(f"../plots/hit_rates/gp_layer{layer_index + 1}_{particle}_hit_rate_test.png")
     canvas.SaveAs(f"../plots/hit_rates/by_module/gp_layer{layer_index + 1}_module_hit_rate.png")
