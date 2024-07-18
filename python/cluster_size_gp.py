@@ -107,10 +107,6 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
     py = particle.getMomentum().y
     pz = particle.getMomentum().z
 
-    # if first_hit:
-    #     theta_i = theta(xi, yi, zi)
-    #     phi_i = phi(xi, yi)
-    # else:
     theta_i = theta(px, py, pz)
     phi_i = phi(px, py)
 
@@ -119,28 +115,10 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
     else:
         coord = disk_z[detector_index]
 
-    # if first_hit:
-    #     new_hit = particle
-    # else:
     new_hit = None
-
     for hit in hits[coord]:
 
-        # if first_hit:
-        #     theta_i_p = theta(px, py, pz)
-        #     phi_i_p = phi(px, py)
-        #     theta_f_p = theta(hit.getMomentum().x, hit.getMomentum().y, hit.getMomentum().z)
-        #     phi_f_p = phi(hit.getMomentum().x, hit.getMomentum().y)
-        #     delta_p = (theta_f_p - theta_i_p)**2 + (min(abs(phi_f_p - phi_i_p), 2*math.pi - abs(phi_f_p - phi_i_p)))**2
-
-        #     theta_f = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z)
-        #     phi_f = phi(hit.getPosition().x, hit.getPosition().y)
-        #     delta_pos = (theta_f - theta_i)**2 + (min(abs(phi_f - phi_i), 2*math.pi - abs(phi_f - phi_i)))**2
-
-        #     delta = delta_p + delta_pos
-        # else:
         delta = delta_squared(theta_i, phi_i, xi, yi, zi, hit)
-
         if delta < 0.01:
             matches[coord] += 1
             new_hit = hit
@@ -157,7 +135,6 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
         return match_counter(new_hit, matches, detector_index + 1, detector, first_hit)
 
 all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
-# all_deltas = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
 for i in range(100):
     print(f"starting event {i}")
     event = events[i]
@@ -182,13 +159,21 @@ for i in range(100):
             continue
 
         th = theta(first_hit.getPosition().x, first_hit.getPosition().y, first_hit.getPosition().z) * (180 / math.pi)
-
         for r in barrel_matches:
             if barrel_matches[r] != 0:
                 all_matches[r][int((th // 3) * 3)].append(barrel_matches[r])
 
+        disk_matches, first_hit = match_counter(particle, {z: 0 for z in disk_z}, 0, "disk", None, True)
+        if first_hit is None:
+            continue
+
+        th = theta(first_hit.getPosition().x, first_hit.getPosition().y, first_hit.getPosition().z) * (180 / math.pi)
+        for z in disk_matches:
+            if disk_matches[z] != 0:
+                all_matches[z][int((th // 3) * 3)].append(disk_matches[z])
+
 for layer_index in range(5):
-    # print(f"Number of matches for layer {layer_index + 1}: {all_matches[layer_radii[layer_index]]}")
+
     hist = ROOT.TH1F("size", f"Guinea Pig Layer {layer_index + 1} Average Number of Matches", 60, 0, 180)
     for ang in range(0, 180, 3):
         if not all_matches[layer_radii[layer_index]][ang]:
@@ -203,21 +188,17 @@ for layer_index in range(5):
     canvas.Update()
     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test2.png")
 
-# for disk_index in range(6):
-#     hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
-#     for ang in range(0, 180, 3):
-#         if not all_matches[disk_z[disk_index]][ang]:
-#             hist.SetBinContent((ang//3) + 1, 0)
-#         else:
-#             hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
-#     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-#     hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
-#     hist.SetStats(0)
-#     canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
-#     hist.Draw()
-#     canvas.Update()
-#     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
-
-# `for ang in all_deltas[14]:
-#     print(f"Mean delta for layer 1, angle {ang}: {np.mean(all_deltas[14][ang])}")
-#     print(f"Standard deviation: {np.std(all_deltas[14][ang])}")`
+for disk_index in range(6):
+    hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
+    for ang in range(0, 180, 3):
+        if not all_matches[disk_z[disk_index]][ang]:
+            hist.SetBinContent((ang//3) + 1, 0)
+        else:
+            hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
+    hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
+    hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
+    hist.SetStats(0)
+    canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
+    hist.Draw()
+    canvas.Update()
+    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
