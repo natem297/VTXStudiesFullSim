@@ -64,7 +64,7 @@ def z_coord(hit):
 
 hits = {coord: [] for coord in layer_radii + disk_z}
 
-for i in range(100):
+for i in range(50,51):
     event = events[i]
     print(f"starting event {i}")
     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
@@ -75,7 +75,7 @@ for i in range(100):
             else:
                 hits[z_coord(hit)].append(hit)
 
-for hit in hits[34.5]:
+for hit in hits[23]:
     sensor = hit.getCellID()
     if sensor not in ids:
         ids[sensor] = []
