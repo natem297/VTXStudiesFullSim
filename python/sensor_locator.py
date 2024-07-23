@@ -20,7 +20,15 @@ def phi(hit):
     """
     x = hit.getPosition().x
     y = hit.getPosition().y
+
+    if x == 0:
+        if y > 0:
+            return math.pi/2
+        elif y < 0:
+            return -math.pi/2
+
     phi = math.atan(y/x)
+
     if x < 0:
         phi +=  math.pi
     elif y < 0:
@@ -64,9 +72,8 @@ def z_coord(hit):
 
 hits = {coord: [] for coord in layer_radii + disk_z}
 
-for i in range(50,51):
+for i in range(1):
     event = events[i]
-    print(f"starting event {i}")
     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
         for hit in event.get(collection):
 
@@ -75,8 +82,14 @@ for i in range(50,51):
             else:
                 hits[z_coord(hit)].append(hit)
 
-for hit in hits[23]:
+for hit in hits[34.5]:
     sensor = hit.getCellID()
     if sensor not in ids:
         ids[sensor] = []
     ids[sensor].append(hit)
+
+sensors = sorted(list(ids.keys()))
+for sensor in sensors:
+    print(sensor)
+    for hit in ids[sensor]:
+        print("\t", "z:", hit.getPosition().z, "phi:", phi(hit))
