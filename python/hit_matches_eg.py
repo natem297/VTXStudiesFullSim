@@ -3,8 +3,7 @@ import ROOT
 import numpy as np
 import math
 
-# input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaPig_andrea_Apr2024/sim_boost_bfield_k4geo_version_Geant4TrackerAction_edep0/electronGun/egun_10GeV_10k_Geant4TrackerAction_edep0.root"
-input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaPig_andrea_Apr2024/sim_boost_bfield_k4geo_version_Geant4TrackerAction_edep0/IDEA_01_v03_pairs_all.root"
+input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaPig_andrea_Apr2024/sim_boost_bfield_k4geo_version_Geant4TrackerAction_edep0/electronGun/egun_10GeV_10k_Geant4TrackerAction_edep0.root"
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
@@ -82,7 +81,7 @@ def delta_squared(theta_i, phi_i, xi, yi, zi, hit):
 
     return delta_theta**2 + delta_phi**2
 
-def cluster_size(particle, clusters, detector_index, detector, monte_carlo = False):
+def match_counter(particle, matches, detector_index, detector, monte_carlo = False):
     """
     Finds trajectory of a given particle by finding hits with a delta squared below a certain
     threshold.  Then recursively calls using the last hit to find matching hits in further detectors.
@@ -119,20 +118,20 @@ def cluster_size(particle, clusters, detector_index, detector, monte_carlo = Fal
     new_hit = None
     for hit in hits[coord]:
         if delta_squared(theta_i, phi_i, xi, yi, zi, hit) < 0.001:
-            clusters[coord] += 1
+            matches[coord] += 1
             new_hit = hit
 
     if detector == "barrel" and detector_index == 4:
-        return clusters
+        return matches
     elif detector == "disk" and detector_index == 5:
-        return clusters
+        return matches
     elif new_hit is None:
-        return cluster_size(particle, clusters, detector_index + 1, detector, monte_carlo)
+        return match_counter(particle, matches, detector_index + 1, detector, monte_carlo)
     else:
-        return cluster_size(new_hit, clusters, detector_index + 1, detector)
+        return match_counter(new_hit, matches, detector_index + 1, detector)
 
-all_clusters = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
-for i in range(100):
+all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
+for i in range(10000):
     event = events[i]
     hits = {coord: [] for coord in layer_radii + disk_z}
 
@@ -152,37 +151,37 @@ for i in range(100):
     particle = mc[0]
     th = theta(particle.getMomentum().x, particle.getMomentum().y, particle.getMomentum().z) * (180 / math.pi)
 
-    barrel_clusters = cluster_size(particle, {r: 0 for r in layer_radii}, 0, "barrel", True)
-    for r in barrel_clusters:
-        all_clusters[r][int((th // 3) * 3)].append(barrel_clusters[r])
+    barrel_matches = match_counter(particle, {r: 0 for r in layer_radii}, 0, "barrel", True)
+    for r in barrel_matches:
+        all_matches[r][int((th // 3) * 3)].append(barrel_matches[r])
 
-    disk_clusters = cluster_size(particle, {z: 0 for z in disk_z}, 0, "disk", True)
-    for z in disk_clusters:
-        all_clusters[z][int((th //3) * 3)].append(disk_clusters[z])
+    disk_matches = match_counter(particle, {z: 0 for z in disk_z}, 0, "disk", True)
+    for z in disk_matches:
+        all_matches[z][int((th //3) * 3)].append(disk_matches[z])
 
 for layer_index in range(5):
-    hist = ROOT.TH1F("size", f"Electron Gun Layer {layer_index + 1} Average Cluster Size", 60, 0, 180)
+    hist = ROOT.TH1F("size", f"Electron Gun Layer {layer_index + 1} Average Number of Matches", 60, 0, 180)
     for ang in range(0, 180, 3):
-        if not all_clusters[layer_radii[layer_index]][ang]:
+        if not all_matches[layer_radii[layer_index]][ang]:
             hist.SetBinContent((ang//3) + 1, 0)
         else:
-            hist.SetBinContent((ang//3) + 1, np.mean(all_clusters[layer_radii[layer_index]][ang]))
+            hist.SetBinContent((ang//3) + 1, np.mean(all_matches[layer_radii[layer_index]][ang]))
     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-    hist.GetYaxis().SetTitle("Average Cluster Size")
+    hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
     hist.SetStats(0)
-    canvas = ROOT.TCanvas("size", f"Electron Gun Layer {layer_index + 1} Average Cluster Size")
+    canvas = ROOT.TCanvas("size", f"Electron Gun Layer {layer_index + 1} Average Number of Matches")
     hist.Draw()
     canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/eg_layer{layer_index + 1}_cluster_size.png")
+    canvas.SaveAs(f"../plots/hit_matches/electron_gun/eg_layer{layer_index + 1}_match_counter.png")
 
 for disk_index in range(6):
-    hist = ROOT.TH1F("size", f"Electron Gun Disk {disk_index + 1} Average Cluster Size", 60, 0, 180)
+    hist = ROOT.TH1F("size", f"Electron Gun Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
     for ang in range(0, 180, 3):
-        hist.SetBinContent((ang//3) + 1, np.mean(all_clusters[disk_z[disk_index]][ang]))
+        hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-    hist.GetYaxis().SetTitle("Average Cluster Size")
+    hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
     hist.SetStats(0)
-    canvas = ROOT.TCanvas("size", f"Electron Gun Disk {disk_index + 1} Average Cluster Size")
+    canvas = ROOT.TCanvas("size", f"Electron Gun Disk {disk_index + 1} Average Number of Matches")
     hist.Draw()
     canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/eg_disk{disk_index + 1}_cluster_size.png")
+    canvas.SaveAs(f"../plots/hit_matches/electron_gun/eg_disk{disk_index + 1}_match_counter.png")
