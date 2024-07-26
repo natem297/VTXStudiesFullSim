@@ -1,4 +1,6 @@
 from podio import root_io
+import ROOT
+import uproot
 
-input_file_path = "/eos/experiment/fcc/prod/fcc/ee/test_spring2024/240gev/mumuH/CLD_o2_v05/rec/00016478/000/"
-podio_reader = root_io.Reader(input_file_path)
+input_file_path = "/eos/user/j/jaeyserm/public/mumuH_rec_16478_29.root"
+file = uproot.open(input_file_path)
