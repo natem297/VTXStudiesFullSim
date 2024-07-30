@@ -43,11 +43,9 @@ def phi(x,y):
         phi += 2*math.pi
     return phi
 
-hit_map = {r: {z: {azimuthal: [0]*1000 for azimuthal in range(0, 360, 3)} for z in range(-110, 110, 2)} for r in radii}
 hits = {r: [] for r in radii}
 for i in range(1000):
 
-    hits = {coord: [] for coord in radii}
     event_x = x_data[i]
     event_y = y_data[i]
     event_z = z_data[i]
@@ -56,4 +54,16 @@ for i in range(1000):
         x = event_x[j]
         y = event_y[j]
         r = np.sqrt(x**2 + y**2)
-        hits[radius(r)].append(j)
+        hits[radius(r)].append((i,j))
+
+for layer_index in range(3):
+    hist = ROOT.TH1F("edep", f"Layer {layer_index + 1} Energy Deposited", 50, 0, 50)
+    for event, hit in hits[radii[layer_index]]:
+        edep = edep_data[event][hit] * 1000000
+        hist.Fill(edep)
+    hist.GetXaxis().SetTitle("Energy Deposited (keV)")
+    hist.GetYaxis().SetTitle("Number of Events")
+    canvas = ROOT.TCanvas("edep", f"Layer {layer_index + 1} Energy Deposited")
+    hist.Draw()
+    canvas.Update()
+    canvas.SaveAs(f"../plots/energy_deposited/higgs/higgs_edep_layer{layer_index + 1}.png")
