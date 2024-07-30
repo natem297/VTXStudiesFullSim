@@ -1,4 +1,3 @@
-
 import uproot
 import numpy as np
 import math
@@ -44,10 +43,9 @@ def phi(x,y):
         phi += 2*math.pi
     return phi
 
-hit_map = {r: {z: {azimuthal: [0]*1000 for azimuthal in range(0, 360, 3)} for z in range(-110, 110, 2)} for r in radii}
+hits = {r: [] for r in radii}
 for i in range(1000):
 
-    hits = {coord: [] for coord in radii}
     event_x = x_data[i]
     event_y = y_data[i]
     event_z = z_data[i]
@@ -56,30 +54,16 @@ for i in range(1000):
         x = event_x[j]
         y = event_y[j]
         r = np.sqrt(x**2 + y**2)
-        hits[radius(r)].append(j)
-
-    for r in radii:
-        for index in hits[r]:
-            x = event_x[index]
-            y = event_y[index]
-            z = event_z[index]
-            azimuthal = phi(x, y) * (180 / math.pi)
-            hit_map[r][int((z // 2) * 2)][int((azimuthal // 3) * 3)][i] += 1
+        hits[radius(r)].append((i,j))
 
 for layer_index in range(3):
-
-    r = radii[layer_index]
-    hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", \
-                    110, -110, 110, 120, 0, 360)
-    hist.SetTitle(f"Layer {layer_index + 1} Hits per Bunch Crossing;z (mm);Azimuthal Angle (deg)")
-
-    for z in range(-110, 110, 2):
-        for azimuthal in range(0, 360, 3):
-            hits = np.mean(hit_map[r][z][azimuthal])
-            hist.SetBinContent(((z + 110) // 2) + 1, (azimuthal // 3) + 1, hits)
-
-    hist.SetStats(0)
-    canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
-    hist.Draw("colz")
+    hist = ROOT.TH1F("edep", f"Layer {layer_index + 1} Energy Deposited", 50, 0, 50)
+    for event, hit in hits[radii[layer_index]]:
+        edep = edep_data[event][hit] * 1000000
+        hist.Fill(edep)
+    hist.GetXaxis().SetTitle("Energy Deposited (keV)")
+    hist.GetYaxis().SetTitle("Number of Events")
+    canvas = ROOT.TCanvas("edep", f"Layer {layer_index + 1} Energy Deposited")
+    hist.Draw()
     canvas.Update()
-    canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate.png")
+    canvas.SaveAs(f"../plots/energy_deposited/higgs/higgs_edep_layer{layer_index + 1}.png")
