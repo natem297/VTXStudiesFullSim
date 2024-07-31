@@ -22,31 +22,31 @@ for event in events:
         particle_energies[p_type].append(1000*particle.getEnergy())
         particle_momentums[p_type].append(1000*np.sqrt(particle.getMomentum().x**2 + particle.getMomentum().y**2 + particle.getMomentum().z**2))
 
-# energy_hist = ROOT.TH1F("energy", "Monte Carlo Particle Energy", 500, 0, 50)
+# energy_hist = ROOT.TH1F("energy", "Monte Carlo All Particles Energy", 500, 0, 50)
 # for energy_list in particle_energies.values():
 #     for e in energy_list:
 #         energy_hist.Fill(e)
 # energy_hist.GetXaxis().SetTitle("Energy (MeV)")
 # energy_hist.GetYaxis().SetTitle("Number of Particles")
-# energy_canvas = ROOT.TCanvas("energy", "Monte Carlo Particle Energy")
+# energy_canvas = ROOT.TCanvas("energy", "Monte Carlo All Particles Energy")
 # energy_hist.Draw()
 # energy_canvas.Update()
-# energy_canvas.SaveAs("../plots/monte_carlo/guinea_pig_energy.png")
+# energy_canvas.SaveAs("../plots/monte_carlo/guinea_pig_all_energy.png")
 
-# momentum_hist = ROOT.TH1F("momentum", "Monte Carlo Particle Momentum", 500, 0, 50)
+# momentum_hist = ROOT.TH1F("momentum", "Monte Carlo All Particles Momentum", 500, 0, 50)
 # for momentum_list in particle_momentums.values():
 #     for p in momentum_list:
 #         momentum_hist.Fill(p)
 # momentum_hist.GetXaxis().SetTitle("Momentum (MeV)")
 # momentum_hist.GetYaxis().SetTitle("Number of Particles")
-# momentum_canvas = ROOT.TCanvas("momentum", "Monte Carlo Particle Momentum")
+# momentum_canvas = ROOT.TCanvas("momentum", "Monte Carlo All Particles Momentum")
 # momentum_hist.Draw()
 # momentum_canvas.Update()
-# momentum_canvas.SaveAs("../plots/monte_carlo/guinea_pig_momentum.png")
+# momentum_canvas.SaveAs("../plots/monte_carlo/guinea_pig_all_momentum.png")
 
-photon_energy_hist = ROOT.TH1F("Photon Energy", "Monte Carlo Particle Energy", 5000, 0, 1000)
-lepton_energy_hist = ROOT.TH1F("Lepton Energy", "Monte Carlo Particle Energy", 5000, 0, 1000)
-hadron_energy_hist = ROOT.TH1F("Hadron Energy", "Monte Carlo Particle Energy", 5000, 0, 1000)
+photon_energy_hist = ROOT.TH1F("Photon Energy", "Monte Carlo Particle Energy (Normalized)", 5000, 0, 1000)
+lepton_energy_hist = ROOT.TH1F("Lepton Energy", "Monte Carlo Particle Energy (Normalized)", 5000, 0, 1000)
+hadron_energy_hist = ROOT.TH1F("Hadron Energy", "Monte Carlo Particle Energy (Normalized)", 5000, 0, 1000)
 
 for p in particle_energies["photon"]:
     photon_energy_hist.Fill(p)
@@ -81,9 +81,9 @@ energy_legend.Draw()
 canvas.Update()
 canvas.SaveAs("../plots/monte_carlo/guinea_pig_energy_combined.png")
 
-photon_momentum_hist = ROOT.TH1F("Photon Momentum", "Monte Carlo Particle Momentum", 1000, 0, 100)
-lepton_momentum_hist = ROOT.TH1F("Lepton Momentum", "Monte Carlo Particle Momentum", 1000, 0, 100)
-hadron_momentum_hist = ROOT.TH1F("Hadron Momentum", "Monte Carlo Particle Momentum", 1000, 0, 100)
+photon_momentum_hist = ROOT.TH1F("Photon Momentum", "Monte Carlo Particle Momentum (Normalized)", 1000, 0, 100)
+lepton_momentum_hist = ROOT.TH1F("Lepton Momentum", "Monte Carlo Particle Momentum (Normalized)", 1000, 0, 100)
+hadron_momentum_hist = ROOT.TH1F("Hadron Momentum", "Monte Carlo Particle Momentum (Normalized)", 1000, 0, 100)
 
 for p in particle_momentums["photon"]:
     photon_momentum_hist.Fill(p)
