@@ -112,7 +112,7 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
 
     if detector == "barrel":
         coord = layer_radii[detector_index]
-    else:
+    elif detector == "disk":
         coord = disk_z[detector_index]
 
     new_hit = None
@@ -163,16 +163,16 @@ for i in range(100):
             if barrel_matches[r] != 0:
                 all_matches[r][int((th // 3) * 3)].append(barrel_matches[r])
 
-        disk_matches, first_hit = match_counter(particle, {z: 0 for z in disk_z}, 0, "disk", None, True)
-        if first_hit is None:
-            continue
+        # disk_matches, first_hit = match_counter(particle, {z: 0 for z in disk_z}, 0, "disk", None, True)
+        # if first_hit is None:
+        #     continue
 
-        th = theta(first_hit.getPosition().x, first_hit.getPosition().y, first_hit.getPosition().z) * (180 / math.pi)
-        for z in disk_matches:
-            if disk_matches[z] != 0:
-                all_matches[z][int((th // 3) * 3)].append(disk_matches[z])
+        # th = theta(first_hit.getPosition().x, first_hit.getPosition().y, first_hit.getPosition().z) * (180 / math.pi)
+        # for z in disk_matches:
+        #     if disk_matches[z] != 0:
+        #         all_matches[z][int((th // 3) * 3)].append(disk_matches[z])
 
-for layer_index in range(5):
+for layer_index in range(1):
 
     hist = ROOT.TH1F("size", f"Guinea Pig Layer {layer_index + 1} Average Number of Matches", 60, 0, 180)
     for ang in range(0, 180, 3):
@@ -188,17 +188,17 @@ for layer_index in range(5):
     canvas.Update()
     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test2.png")
 
-for disk_index in range(6):
-    hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
-    for ang in range(0, 180, 3):
-        if not all_matches[disk_z[disk_index]][ang]:
-            hist.SetBinContent((ang//3) + 1, 0)
-        else:
-            hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
-    hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
-    hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
-    hist.SetStats(0)
-    canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
-    hist.Draw()
-    canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
+# for disk_index in range(6):
+#     hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
+#     for ang in range(0, 180, 3):
+#         if not all_matches[disk_z[disk_index]][ang]:
+#             hist.SetBinContent((ang//3) + 1, 0)
+#         else:
+#             hist.SetBinContent((ang//3) + 1, np.mean(all_matches[disk_z[disk_index]][ang]))
+#     hist.GetXaxis().SetTitle("Polar Angle (Degrees)")
+#     hist.GetYaxis().SetTitle("Average Number of SimTrackerHit Matches")
+#     hist.SetStats(0)
+#     canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
+#     hist.Draw()
+#     canvas.Update()
+#     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
