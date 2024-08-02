@@ -8,7 +8,7 @@ podio_reader = root_io.Reader(input_file_path)
 events = podio_reader.get("events")
 
 layer_radii = [14, 23, 34.5, 141, 316]
-true_radii = [13.7, 23.7, 34, ]
+true_radii = [13.7, 23.7, 34]
 disk_z = [303, 635, 945, -303, -635, -945]
 particles = {11: "electron", -11: "positron"}
 z_ranges = {14: 96, 23: 160, 34.5: 256}
