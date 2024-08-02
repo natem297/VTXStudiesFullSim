@@ -10,7 +10,7 @@ events = podio_reader.get("events")
 layer_radii = [14, 23, 34.5, 141, 316]
 true_radii = [1.37, 2.37, 3.4, 13, 31.5]
 disk_z = [303, 635, 945, -303, -635, -945]
-z_ranges = {14: (96,4), 23: (162,6), 34.5: (261,9), 141: (162,6), 316: (324,12)}
+z_ranges = {14: (96,2), 23: (162,3), 34.5: (261,3), 141: (162,3), 316: (324,6)}
 particles = {11: "electron", -11: "positron"}
 
 def phi(x,y):
@@ -58,14 +58,14 @@ def z_coord(hit):
             return z
     raise ValueError(f"Not close enough to any of the disks {true_z}")
 
-hit_map = {coord: {z: {azimuthal: {particle: [0] * 100 for particle in particles.values()} \
-                for azimuthal in range(0, 360, 3)} \
-                    for z in range(-z_ranges[coord][0], z_ranges[coord][0], z_ranges[coord][1])} \
-                        for coord in layer_radii}
+# hit_map = {coord: {z: {azimuthal: {particle: [0] * 100 for particle in particles.values()} \
+#                 for azimuthal in range(0, 360, 3)} \
+#                     for z in range(-z_ranges[coord][0], z_ranges[coord][0], z_ranges[coord][1])} \
+#                         for coord in layer_radii}
 
-# hit_map = {coord: {z: {azimuthal: [0] * 100 for azimuthal in range(0, 360, 3)} \
-#                 for z in range(-z_ranges[coord][0], z_ranges[coord][0], z_ranges[coord][1])} \
-#                     for coord in layer_radii}
+hit_map = {coord: {z: {azimuthal: [0] * 100 for azimuthal in range(0, 360, 3)} \
+                for z in range(-z_ranges[coord][0], z_ranges[coord][0], z_ranges[coord][1])} \
+                    for coord in layer_radii}
 
 for i in range(100):
     event = events[i]
@@ -96,8 +96,8 @@ for i in range(100):
             z = hit.getPosition().z
             if abs(z) > z_ranges[coord][0]:
                 continue
-            hit_map[coord][int((z // z_ranges[coord][1]) * z_ranges[coord][1])][int((ph // 3) * 3)][particle][i] += 1
-            # hit_map[coord][int((z // z_ranges[coord][1]) * z_ranges[coord][1])][int((ph // 3) * 3)][i] += 1
+            # hit_map[coord][int((z // z_ranges[coord][1]) * z_ranges[coord][1])][int((ph // 3) * 3)][particle][i] += 1
+            hit_map[coord][int((z // z_ranges[coord][1]) * z_ranges[coord][1])][int((ph // 3) * 3)][i] += 1
 
 for layer_index in range(5):
     for particle in particles.values():
@@ -106,19 +106,19 @@ for layer_index in range(5):
         z_range = z_ranges[layer_radii[layer_index]]
         area = z_range[1] * r * math.pi/60
         hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Hits", (2 * z_range[0]) // z_range[1], -z_range[0], z_range[0], 120, 0, 360)
-        # hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits Per Area (cm ^-2);Cosine Theta;Azimuthal Angle (deg)")
-        hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Hits Per Area (cm^-2);z (mm); Azimuthal Angle (deg)")
+        # hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits Per Area (cm ^-2);z (mm);Azimuthal Angle (deg)")
+        hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Raw Hits;z (mm); Azimuthal Angle (deg)")
 
         for z in range(-z_range[0], z_range[0], z_range[1]):
             for azimuthal in range(0, 360, 3):
-                hits = np.mean(hit_map[layer_radii[layer_index]][z][azimuthal][particle])
-                # hits = np.mean(hit_map[layer_radii[layer_index]][z][azimuthal])
-                hist.SetBinContent(((z + z_range[0]) // z_range[1]) + 1, (azimuthal // 3) + 1, hits / area)
+                # hits = np.mean(hit_map[layer_radii[layer_index]][z][azimuthal][particle])
+                hits = np.mean(hit_map[layer_radii[layer_index]][z][azimuthal])
+                hist.SetBinContent(((z + z_range[0]) // z_range[1]) + 1, (azimuthal // 3) + 1, hits)
 
         hist.SetStats(0)
         canvas = ROOT.TCanvas("hit map", f"Guinea Pig Layer {layer_index + 1} Hits")
         canvas.SetRightMargin(0.12)
         hist.Draw("colz")
         canvas.Update()
-        canvas.SaveAs(f"../plots/hit_rates/{particle}/gp_layer{layer_index + 1}_{particle}_hit_rate.png")
-        # canvas.SaveAs(f"../plots/hit_rates/per_area/gp_layer{layer_index + 1}_hit_rate.png")
+        # canvas.SaveAs(f"../plots/hit_rates/{particle}/gp_layer{layer_index + 1}_{particle}_hit_rate.png")
+        canvas.SaveAs(f"../plots/hit_rates/raw_hits/gp_layer{layer_index + 1}_raw_hit_rate.png")
