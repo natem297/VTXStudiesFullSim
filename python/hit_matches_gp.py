@@ -134,20 +134,16 @@ def match_counter(particle, matches, detector_index, detector, first_hit = None,
     else:
         return match_counter(new_hit, matches, detector_index + 1, detector, first_hit)
 
-all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii + disk_z}
+all_matches = {coord: {ang: [] for ang in range(0, 180, 3)} for coord in layer_radii}
 for i in range(100):
     print(f"starting event {i}")
     event = events[i]
-    hits = {coord: [] for coord in layer_radii + disk_z}
+    hits = {coord: [] for coord in layer_radii}
 
     # categorizes all hits by layer
-    for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
+    for collection in ["VTXIBCollection", "VTXOBCollection"]:
         for hit in event.get(collection):
-
-            if collection != "VTXDCollection":
-                hits[radius(hit)].append(hit)
-            else:
-                hits[z_coord(hit)].append(hit)
+            hits[radius(hit)].append(hit)
 
     for particle in event.get("MCParticles"):
 
