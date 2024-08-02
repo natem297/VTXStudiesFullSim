@@ -66,20 +66,20 @@ for i in range(1000):
             azimuthal = phi(x, y) * (180 / math.pi)
             hit_map[r][int((z // 2) * 2)][int((azimuthal // 3) * 3)][i] += 1
 
-# for layer_index in range(3):
+for layer_index in range(3):
 
-#     r = radii[layer_index]
-#     hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Module Hits", \
-#                     110, -110, 110, 120, 0, 360)
-#     hist.SetTitle(f"Layer {layer_index + 1} Hits per Bunch Crossing;z (mm);Azimuthal Angle (deg)")
+    r = radii[layer_index]
+    hist = ROOT.TH2F("hit map", f"Higgs Layer {layer_index + 1} Hits per Bunch Crossing", \
+                    110, -110, 110, 120, 0, 360)
+    hist.SetTitle(f"Higgs Layer {layer_index + 1} Hits per Bunch Crossing;z (mm);Azimuthal Angle (deg)")
 
-#     for z in range(-110, 110, 2):
-#         for azimuthal in range(0, 360, 3):
-#             hits = np.mean(hit_map[r][z][azimuthal])
-#             hist.SetBinContent(((z + 110) // 2) + 1, (azimuthal // 3) + 1, hits)
+    for z in range(-110, 110, 2):
+        for azimuthal in range(0, 360, 3):
+            hits = np.mean(hit_map[r][z][azimuthal])
+            hist.SetBinContent(((z + 110) // 2) + 1, (azimuthal // 3) + 1, hits)
 
-#     hist.SetStats(0)
-#     canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
-#     hist.Draw("colz")
-#     canvas.Update()
-#     canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate.png")
+    hist.SetStats(0)
+    canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
+    hist.Draw("colz")
+    canvas.Update()
+    canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate.png")
