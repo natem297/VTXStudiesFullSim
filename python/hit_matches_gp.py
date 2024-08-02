@@ -182,7 +182,7 @@ for layer_index in range(1):
     canvas = ROOT.TCanvas("size", f"Guinea Pig Layer {layer_index + 1} Average Number of Matches")
     hist.Draw()
     canvas.Update()
-    canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test2.png")
+    canvas.SaveAs(f"../plots/hit_matches/guinea_pig/gp_layer{layer_index + 1}_cluster_size_test2.png")
 
 # for disk_index in range(6):
 #     hist = ROOT.TH1F("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches", 60, 0, 180)
@@ -197,4 +197,4 @@ for layer_index in range(1):
 #     canvas = ROOT.TCanvas("size", f"Guinea Pig Disk {disk_index + 1} Average Number of Matches")
 #     hist.Draw()
 #     canvas.Update()
-#     canvas.SaveAs(f"../plots/cluster_sizes/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
+#     canvas.SaveAs(f"../plots/hit_matches/guinea_pig/gp_disk{disk_index + 1}_cluster_size_test.png")
