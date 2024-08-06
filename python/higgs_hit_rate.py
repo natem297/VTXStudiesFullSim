@@ -80,6 +80,7 @@ for layer_index in range(3):
 
     hist.SetStats(0)
     canvas = ROOT.TCanvas("hit map", f"Layer {layer_index + 1} Hits")
+    canvas.SetRightMargin(0.12)
     hist.Draw("colz")
     canvas.Update()
     canvas.SaveAs(f"../plots/hit_rates/higgs/higgs_layer{layer_index + 1}_hit_rate.png")
