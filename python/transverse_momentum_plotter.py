@@ -8,10 +8,10 @@ input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaP
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
-collection = ["MCParticles", "Monte Carlo", "mc"]
+# collection = ["MCParticles", "Monte Carlo", "mc"]
 # collection = ["VTXIBCollection", "Inner Barrel", "ib"]
 # collection = ["VTXOBCollection", "Outer Barrel", "ob"]
-# collection = ["VTXDCollection", "Disk", "disk"]
+collection = ["VTXDCollection", "Disk", "disk"]
 
 pt_gt_5_count = 0
 
@@ -26,8 +26,8 @@ for event in events:
     #     continue
 
     for particle in particles:
-        if particle.getGeneratorStatus() != 1:
-            continue
+        # if particle.getGeneratorStatus() != 1:
+        #     continue
         p = np.sqrt(particle.getMomentum().x**2 + particle.getMomentum().y**2)
 
         # if p < 0.1: # eliminate non electron hits
