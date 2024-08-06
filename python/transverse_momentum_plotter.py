@@ -26,6 +26,8 @@ for event in events:
     #     continue
 
     for particle in particles:
+        if particle.getGeneratorStatus() != 1:
+            continue
         p = np.sqrt(particle.getMomentum().x**2 + particle.getMomentum().y**2)
 
         # if p < 0.1: # eliminate non electron hits
