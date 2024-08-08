@@ -9,6 +9,7 @@ podio_reader = root_io.Reader(input_file_path)
 events = podio_reader.get("events")
 layer_radii = [14, 23, 34.5, 141, 316]
 disk_z = [303, 635, 945, -303, -635, -945]
+coords = layer_radii + disk_z
 
 def radius(hit):
     """
@@ -108,30 +109,82 @@ def trajectory_tracker(particle, trajectory):
 thetas = {i: [] for i in range(0,180,3)}
 phis = {j: [] for j in range(0,360,3)}
 
+# for e in range(100):
+#     print(f"starting event {e}")
+#     event = events[e]
+#     layers = {coord: [] for coord in layer_radii + disk_z}
+
+#     # categorizes all hits by layer
+#     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
+#         for hit in event.get(collection):
+
+#             if collection != "VTXDCollection":
+#                 layers[radius(hit)].append(hit)
+#             else:
+#                 layers[z_coord(hit)].append(hit)
+
+#     for initial_hit in layers[14]:
+#         traj = trajectory_tracker(initial_hit, [initial_hit])
+
+#         polar = theta(initial_hit.getPosition().x, initial_hit.getPosition().y, initial_hit.getPosition().z)
+#         polar = int(((360 / (2 * math.pi)) * polar) // 3) * 3
+#         thetas[polar].append(len(traj))
+
+#         azimuthal = phi(initial_hit.getPosition().x, initial_hit.getPosition().y)
+#         azimuthal = int(((360 / (2 * math.pi)) * azimuthal) // 3) * 3
+#         phis[azimuthal].append(len(traj))
+
+thetas = {i: [] for i in range(0,180,3)}
+phis = {j: [] for j in range(0,360,3)}
+
 for e in range(100):
     print(f"starting event {e}")
     event = events[e]
-    layers = {coord: [] for coord in layer_radii + disk_z}
+    hits = {coord: [] for coord in layer_radii + disk_z}
 
     # categorizes all hits by layer
     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
         for hit in event.get(collection):
 
             if collection != "VTXDCollection":
-                layers[radius(hit)].append(hit)
+                hits[radius(hit)].append(hit)
             else:
-                layers[z_coord(hit)].append(hit)
+                hits[z_coord(hit)].append(hit)
 
-    for initial_hit in layers[14]:
-        traj = trajectory_tracker(initial_hit, [initial_hit])
+    visited_mc = []
+    visited_hits = []
 
-        polar = theta(initial_hit.getPosition().x, initial_hit.getPosition().y, initial_hit.getPosition().z)
-        polar = int(((360 / (2 * math.pi)) * polar) // 3) * 3
-        thetas[polar].append(len(traj))
+    for i in range(11):
+        for hit in hits[coords[i]]:
 
-        azimuthal = phi(initial_hit.getPosition().x, initial_hit.getPosition().y)
-        azimuthal = int(((360 / (2 * math.pi)) * azimuthal) // 3) * 3
-        phis[azimuthal].append(len(traj))
+            if hit in visited_hits:
+                continue
+            mc = hit.getMCParticle()
+            if mc in visited_mc:
+                continue
+            visited_mc.append(mc)
+
+            polar = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z) * (180 / math.pi)
+            polar = int(polar // 3) * 3
+
+            azimuthal = phi(hit.getPosition().x, hit.getPosition().y) * (180 / math.pi)
+            azimuthal = int(azimuthal // 3) * 3
+
+            traj_length = 1
+
+            for j in range(i+1,11):
+                hit_found = False
+                for hit2 in hits[coords[j]]:
+
+                    if hit2.getMCParticle() == mc:
+                        if not hit_found:
+                            traj_length += 1
+                            hit_found = True
+                        visited_hits.append(hit2)
+
+
+            thetas[polar].append(traj_length)
+            phis[azimuthal].append(traj_length)
 
 thetas_hist_total = ROOT.TH1F("Total", "Detector Hits vs Theta", 60, 0, 180)
 

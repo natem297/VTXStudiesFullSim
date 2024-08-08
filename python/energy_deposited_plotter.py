@@ -56,7 +56,7 @@ ROOT.gStyle.SetPalette(ROOT.kRainBow)
 # creates histogram for each layer
 for layer_index in range(5):
     cos_map_hist = ROOT.TH2F("events", f"Guinea Pig Layer {layer_index + 1} Energy Deposited and Cosine Theta", 100, 0, 1, 100, 0, 100)
-    hist = ROOT.TH1F("energy", f"Guinea Pig Layer {layer_index + 1} Energy Deposited", 70, 0, 700)
+    hist = ROOT.TH1F("energy", f"Guinea Pig Layer {layer_index + 1} dE/dx", 70, 0, 700)
     phis, zs = [], []
 
     for hit in layers[layer_radii[layer_index]]:

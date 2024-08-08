@@ -40,13 +40,18 @@ for i in range(100):
     print(f"starting event {i}")
     event = events[i]
     for hit in event.get("VTXIBCollection"):
+        if hit.isProducedBySecondary():
+            continue
         if radius(hit) == 14:
             cells[hit.getCellID()][i] += 1
 
 pix_per_mod = 430080
+# total_hits = [sum(hits[i] for hits in cells.values()) for i in range(100)]
 module_hit_averages = [np.mean(cells[mod]) for mod in cells.keys()]
 max_hits = max(module_hit_averages)
 avg_hits = np.mean(module_hit_averages)
+# max_hits = max(total_hits)
+# avg_hits = np.mean(total_hits)
 
 print(f"Maximum occupancy: {max_hits*15/pix_per_mod}")
 print(f"Average occupancy: {avg_hits*15/pix_per_mod}")
