@@ -57,11 +57,12 @@ for i in range(1000):
         hits[radius(r)].append((i,j))
 
 for layer_index in range(3):
-    hist = ROOT.TH1F("edep", f"Higgs Layer {layer_index + 1} Energy Deposited", 50, 0, 50)
+    hist = ROOT.TH1F("edep", f"Higgs Layer {layer_index + 1} dE/dx", 70, 0, 700)
     for event, hit in hits[radii[layer_index]]:
         edep = edep_data[event][hit] * 1000000
-        hist.Fill(edep)
-    hist.GetXaxis().SetTitle("Energy Deposited (keV)")
+        path_length = pathlength_data[event][hit]
+        hist.Fill(edep / path_length)
+    hist.GetXaxis().SetTitle("dE/dx (keV/mm)")
     hist.GetYaxis().SetTitle("Number of Events")
     hist.SetStats(0)
     canvas = ROOT.TCanvas("edep", f"Layer {layer_index + 1} Energy Deposited")
