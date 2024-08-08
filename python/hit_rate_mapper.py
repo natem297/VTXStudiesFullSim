@@ -107,7 +107,7 @@ for layer_index in range(5):
         area = z_range[1] * r * math.pi/60
         hist = ROOT.TH2F("hit map", f"Guinea Pig Layer {layer_index + 1} Hits", (2 * z_range[0]) // z_range[1], -z_range[0], z_range[0], 120, 0, 360)
         # hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} {particle.capitalize()} Hits Per Area (cm ^-2);z (mm);Azimuthal Angle (deg)")
-        hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Raw Hits;z (mm); Azimuthal Angle (deg)")
+        hist.SetTitle(f"Guinea Pig Layer {layer_index + 1} Hits Per Bunch Crossing;z (mm); Azimuthal Angle (deg)")
 
         for z in range(-z_range[0], z_range[0], z_range[1]):
             for azimuthal in range(0, 360, 3):
