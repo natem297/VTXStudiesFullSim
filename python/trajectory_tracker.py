@@ -8,7 +8,7 @@ input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaP
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
-layer_radii = [14, 23, 34.5, 141, 316] # approximate r values of barrels
+layer_radii = [14, 23, 35, 141, 316] # approximate r values of barrels
 disk_z = [-303, -635, -945, 303, 635, 945] # approximate z values of disks
 component_coords = layer_radii + disk_z
 # maps subdetector index to sub detector (inner barrel, outer barrel, left disks, right disks)
@@ -19,7 +19,7 @@ def radius(hit):
     """
     Calculates polar radius of particle.
     Inputs: hit, SimTrackerHit object.
-    Output: r, number representing polar radius in mm.
+    Output: r, int representing polar radius in mm.
     """
     true_radius = np.sqrt(hit.getPosition().x**2 + hit.getPosition().y**2)
     for r in layer_radii:
@@ -64,14 +64,15 @@ def trajectory_length(start_comp, mc_particle):
     """
     Finds trajectory length of a given particle by finding hits with the same MC particle.
     Inputs:
-        start_subdet: int, representing index of subdetector where starting hit is located.
+        start_comp: int, representing index of component where starting hit is located.
+        mc_particle: MCParticle, particle being tracked.
     Outputs:
         traj_lengths: dict, mapping each subdetector (ib, ob, ld, rd) to the number of hits
             in that subdetector.
     """
     traj_lengths = {"ib": 0, "ob": 0, "ld": 0, "rd": 0, "total": 1}
     traj_lengths[comp_index_dict[start_comp]] += 1 # adds 1 to starting subdetector
-
+    # searches through remaining components for mc match
     for comp_index in range(start_comp + 1, 11):
         for hit in hits[component_coords[comp_index]]:
             if hit.getMCParticle() == mc_particle:
@@ -106,7 +107,7 @@ for e in range(10000):
 
             mc = hit.getMCParticle()
             if mc in visited_mc or mc.getGeneratorStatus() != 1:
-                continue
+                continue # particle already tracked or not input into geant
             visited_mc.append(mc)
 
             polar = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z) * (180 / math.pi)
