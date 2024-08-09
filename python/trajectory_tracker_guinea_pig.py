@@ -7,9 +7,12 @@ input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaP
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
-layer_radii = [14, 23, 34.5, 141, 316]
-disk_z = [303, 635, 945, -303, -635, -945]
-coords = layer_radii + disk_z
+layer_radii = [14, 23, 34.5, 141, 316] # approximate r values of barrels
+disk_z = [-303, -635, -945, 303, 635, 945] # approximate z values of disks
+component_coords = layer_radii + disk_z
+# maps subdetector index to sub detector (inner barrel, outer barrel, left disks, right disks)
+comp_index_dict = {0: "ib", 1: "ib", 2: "ib", 3: "ob", 4: "ob", \
+                    5: "ld", 6: "ld", 7: "ld", 8: "rd", 9: "rd", 10: "rd"}
 
 def radius(hit):
     """
@@ -56,93 +59,36 @@ def theta(x,y,z):
     """
     return math.acos(z/np.sqrt(x**2 + y**2 + z**2))
 
-def delta_squared(theta_i, phi_i, xi, yi, zi, hit):
+def trajectory_length(start_comp, mc_particle):
     """
-    Calculates delta of a particle-hit pair.
+    Finds trajectory length of a given particle by finding hits with the same MC particle.
     Inputs:
-        hit, SimTracker Hit object.
-        theta_i, phi_i, floats representing direction of mc particle.
-        xi, yi, zi, floats representing position of mc particle.
-    Outputs: delta, float.
+        start_subdet: int, representing index of subdetector where starting hit is located.
+    Outputs:
+        traj_lengths: dict, mapping each subdetector (ib, ob, ld, rd) to the number of hits
+            in that subdetector.
     """
+    traj_lengths = {"ib": 0, "ob": 0, "ld": 0, "rd": 0, "total": 1}
+    traj_lengths[comp_index_dict[start_comp]] += 1 # adds 1 to starting subdetector
 
-    xf = hit.getPosition().x
-    yf = hit.getPosition().y
-    zf = hit.getPosition().z
+    for comp_index in range(start_comp + 1, 11):
+        for hit in hits[component_coords[comp_index]]:
+            if hit.getMCParticle() == mc_particle:
+                traj_lengths[comp_index_dict[comp_index]] += 1
+                traj_lengths["total"] += 1
+                break
 
-    delta_x = xf - xi
-    delta_y = yf - yi
-    delta_z = zf - zi
-
-    theta_f = theta(delta_x, delta_y, delta_z)
-    phi_f = phi(delta_x, delta_y)
-
-    delta_theta = theta_f - theta_i
-    delta_phi = min(abs(phi_f - phi_i), 2*math.pi - abs(phi_f - phi_i))
-
-    return delta_theta**2 + delta_phi**2
-
-def trajectory_tracker(particle, trajectory):
-
-    xi = particle.getPosition().x
-    yi = particle.getPosition().y
-    zi = particle.getPosition().z
-
-    px = particle.getMomentum().x
-    py = particle.getMomentum().y
-    pz = particle.getMomentum().z
-
-    theta_i = theta(px, py, pz)
-    phi_i = phi(px, py)
-
-    for coord in layer_radii + disk_z:
-        if coord == 14:
-            continue
-
-        for hit in layers[coord]:
-            if delta_squared(theta_i, phi_i, xi, yi, zi, hit) < 0.01:
-                trajectory.append(hit)
-                continue
-
-    return trajectory
-
-thetas = {i: [] for i in range(0,180,3)}
-phis = {j: [] for j in range(0,360,3)}
-
-# for e in range(100):
-#     print(f"starting event {e}")
-#     event = events[e]
-#     layers = {coord: [] for coord in layer_radii + disk_z}
-
-#     # categorizes all hits by layer
-#     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
-#         for hit in event.get(collection):
-
-#             if collection != "VTXDCollection":
-#                 layers[radius(hit)].append(hit)
-#             else:
-#                 layers[z_coord(hit)].append(hit)
-
-#     for initial_hit in layers[14]:
-#         traj = trajectory_tracker(initial_hit, [initial_hit])
-
-#         polar = theta(initial_hit.getPosition().x, initial_hit.getPosition().y, initial_hit.getPosition().z)
-#         polar = int(((360 / (2 * math.pi)) * polar) // 3) * 3
-#         thetas[polar].append(len(traj))
-
-#         azimuthal = phi(initial_hit.getPosition().x, initial_hit.getPosition().y)
-#         azimuthal = int(((360 / (2 * math.pi)) * azimuthal) // 3) * 3
-#         phis[azimuthal].append(len(traj))
+    return traj_lengths
 
 thetas = {i: [] for i in range(0,180,3)}
 phis = {j: [] for j in range(0,360,3)}
 
 for e in range(100):
-    print(f"starting event {e}")
+    print(f"Starting event {e + 1}")
     event = events[e]
-    hits = {coord: [] for coord in layer_radii + disk_z}
+    hits = {coord: [] for coord in component_coords}
 
-    # categorizes all hits by layer
+    # categorizes barrel hits by radius and disk hits by z coord
     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
         for hit in event.get(collection):
 
@@ -152,47 +98,33 @@ for e in range(100):
                 hits[z_coord(hit)].append(hit)
 
     visited_mc = []
-    visited_hits = []
 
-    for i in range(11):
-        for hit in hits[coords[i]]:
+    for comp_index in range(11):
+        for hit in hits[component_coords[comp_index]]:
 
-            if hit in visited_hits:
-                continue
             mc = hit.getMCParticle()
-            if mc in visited_mc:
+            if mc in visited_mc or mc.getGeneratorStatus() != 1:
                 continue
             visited_mc.append(mc)
 
             polar = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z) * (180 / math.pi)
-            polar = int(polar // 3) * 3
+            polar = int(polar // 3) * 3 # rounds down to nearest multiple of 3
 
             azimuthal = phi(hit.getPosition().x, hit.getPosition().y) * (180 / math.pi)
-            azimuthal = int(azimuthal // 3) * 3
+            azimuthal = int(azimuthal // 3) * 3 # rounds down to nearest multiple of 3
 
-            traj_length = 1
+            traj_lengths = trajectory_length(comp_index, mc)
 
-            for j in range(i+1,11):
-                hit_found = False
-                for hit2 in hits[coords[j]]:
-
-                    if hit2.getMCParticle() == mc:
-                        if not hit_found:
-                            traj_length += 1
-                            hit_found = True
-                        visited_hits.append(hit2)
-
-
-            thetas[polar].append(traj_length)
-            phis[azimuthal].append(traj_length)
+            thetas[polar].append(list(traj_lengths.values()))
+            phis[azimuthal].append(list(traj_lengths.values()))
 
 thetas_hist_total = ROOT.TH1F("Total", "Detector Hits vs Theta", 60, 0, 180)
 
-for i in range(0,180,3):
-    if not thetas[i]:
-        thetas_hist_total.SetBinContent((i//3) + 1, 0)
+for th in range(0,180,3):
+    if not thetas[th]:
+        thetas_hist_total.SetBinContent((th//3) + 1, 0)
     else:
-        thetas_hist_total.SetBinContent((i//3) + 1, np.mean(thetas[i]))
+        thetas_hist_total.SetBinContent((th//3) + 1, np.mean([lengths[4] for lengths in thetas[th]]))
 
 thetas_hist_total.SetXTitle("Polar Angle (deg)")
 thetas_hist_total.SetYTitle("Average Number of Hits")
@@ -205,11 +137,11 @@ thetas_canvas.SaveAs("../plots/angle_hits/theta_hits_guinea_pig_test.png")
 
 phis_hist_total = ROOT.TH1F("Total", "Detector Hits vs Phi", 120, 0, 360)
 
-for i in range(0,360,3):
-    if not phis[i]:
-        phis_hist_total.SetBinContent((i//3) + 1, 0)
+for ph in range(0,360,3):
+    if not phis[ph]:
+        phis_hist_total.SetBinContent((ph//3) + 1, 0)
     else:
-        phis_hist_total.SetBinContent((i//3) + 1, np.mean(phis[i]))
+        phis_hist_total.SetBinContent((ph//3) + 1, np.mean([lengths[4] for lengths in phis[ph]]))
 
 phis_hist_total.SetXTitle("Azimuthal Angle (deg)")
 phis_hist_total.SetYTitle("Average Number of Hits")
