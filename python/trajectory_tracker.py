@@ -91,6 +91,8 @@ for e in range(10000):
     # categorizes barrel hits by radius and disk hits by z coord
     for collection in ["VTXIBCollection", "VTXOBCollection", "VTXDCollection"]:
         for hit in event.get(collection):
+            if hit.isProducedBySecondary(): # mc particle not tracked
+                continue
 
             if collection != "VTXDCollection":
                 hits[radius(hit)].append(hit)
@@ -119,11 +121,11 @@ for e in range(10000):
             phis[azimuthal].append(list(traj_lengths.values()))
 
 # creates theta hist objects for each subdetector and plots them
-thetas_hist_ib = ROOT.TH1F("Inner Barrel", "FCC-ee IDEA Vertex Detector", 60, 0, 180)
-thetas_hist_ob = ROOT.TH1F("Outer Barrel", "FCC-ee IDEA Vertex Detector", 60, 0, 180)
-thetas_hist_ld = ROOT.TH1F("Left Disks", "FCC-ee IDEA Vertex Detector", 60, 0, 180)
-thetas_hist_rd = ROOT.TH1F("Right Disks", "FCC-ee IDEA Vertex Detector", 60, 0, 180)
-thetas_hist_total = ROOT.TH1F("Total", "FCC-ee IDEA Vertex Detector", 60, 0, 180)
+thetas_hist_ib = ROOT.TH1F("Inner Barrel", "IDEA Disks Components Crossed", 60, 0, 180)
+thetas_hist_ob = ROOT.TH1F("Outer Barrel", "IDEA Disks Components Crossed", 60, 0, 180)
+thetas_hist_ld = ROOT.TH1F("Left Disks", "IDEA Disks Components Crossed", 60, 0, 180)
+thetas_hist_rd = ROOT.TH1F("Right Disks", "IDEA Disks Components Crossed", 60, 0, 180)
+thetas_hist_total = ROOT.TH1F("Total", "IDEA Disks Components Crossed", 60, 0, 180)
 
 for i in range(0,180,3):
     if not thetas[i]: # for theta values with no hits
@@ -139,9 +141,9 @@ for i in range(0,180,3):
         thetas_hist_rd.SetBinContent((i//3) + 1, np.mean([lengths[3] for lengths in thetas[i]]))
         thetas_hist_total.SetBinContent((i//3) + 1, np.mean([lengths[4] for lengths in thetas[i]]))
 
-thetas_hist_ld.SetXTitle("Polar Angle (deg)")
-thetas_hist_ld.SetYTitle("Average Number of Components Crossed")
-thetas_hist_ld.SetStats(0)
+thetas_hist_total.SetXTitle("Polar Angle (deg)")
+thetas_hist_total.SetYTitle("Average Number of Components Crossed")
+thetas_hist_total.SetStats(0)
 
 thetas_hist_ib.SetLineColor(ROOT.kRed)
 thetas_hist_ob.SetLineColor(ROOT.kBlue)
@@ -156,7 +158,7 @@ thetas_legend.AddEntry(thetas_hist_ob, "Outer Barrel", "l")
 thetas_legend.AddEntry(thetas_hist_ld, "Left Disks", "l")
 thetas_legend.AddEntry(thetas_hist_rd, "Right Disks", "l")
 
-thetas_canvas = ROOT.TCanvas("Theta Hits", "FCC-ee IDEA Vertex Detector")
+thetas_canvas = ROOT.TCanvas("Theta Hits", "IDEA Disks Components Crossed")
 thetas_hist_total.Draw("hist")
 thetas_hist_ib.Draw("same")
 thetas_hist_ob.Draw("same")
@@ -167,11 +169,11 @@ thetas_canvas.Update()
 thetas_canvas.SaveAs("../plots/angle_hits/theta_hits_eg_combined.png")
 
 # creates phi hist objects for each subdetector and plots them
-phis_hist_ib = ROOT.TH1F("Inner Barrel", "FCC-ee IDEA Vertex Detector", 120, 0, 360)
-phis_hist_ob = ROOT.TH1F("Outer Barrel", "FCC-ee IDEA Vertex Detector", 120, 0, 360)
-phis_hist_ld = ROOT.TH1F("Left Disks", "FCC-ee IDEA Vertex Detector", 120, 0, 360)
-phis_hist_rd = ROOT.TH1F("Right Disks", "FCC-ee IDEA Vertex Detector", 120, 0, 360)
-phis_hist_total = ROOT.TH1F("Total", "FCC-ee IDEA Vertex Detector", 120, 0, 360)
+phis_hist_ib = ROOT.TH1F("Inner Barrel", "IDEA Disks Components Crossed", 120, 0, 360)
+phis_hist_ob = ROOT.TH1F("Outer Barrel", "IDEA Disks Components Crossed", 120, 0, 360)
+phis_hist_ld = ROOT.TH1F("Left Disks", "IDEA Disks Components Crossed", 120, 0, 360)
+phis_hist_rd = ROOT.TH1F("Right Disks", "IDEA Disks Components Crossed", 120, 0, 360)
+phis_hist_total = ROOT.TH1F("Total", "IDEA Disks Components Crossed", 120, 0, 360)
 
 for i in range(0,360,3):
     phis_hist_ib.SetBinContent((i//3) + 1, np.mean([lengths[0] for lengths in phis[i]]))
@@ -198,7 +200,7 @@ phis_legend.AddEntry(phis_hist_ob, "Outer Barrel", "l")
 phis_legend.AddEntry(phis_hist_ld, "Left Disks", "l")
 phis_legend.AddEntry(phis_hist_rd, "Right Disks", "l")
 
-phis_canvas = ROOT.TCanvas("Phi Hits", "FCC-ee IDEA Vertex Detector")
+phis_canvas = ROOT.TCanvas("Phi Hits", "IDEA Disks Components Crossed")
 phis_hist_total.Draw("hist")
 phis_hist_ib.Draw("same")
 phis_hist_ob.Draw("same")
