@@ -25,7 +25,7 @@ def radius(hit):
     for r in layer_radii:
         if abs(true_radius-r) < 4:
             return r
-    raise ValueError(f"Not close enough to any of the layers {np.sqrt(true_radius)}")
+    raise ValueError(f"Not close enough to any of the layers {true_radius}")
 
 def z_coord(hit):
     """
