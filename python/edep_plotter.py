@@ -44,11 +44,13 @@ def theta(x,y,z):
     """
     return math.acos(z/np.sqrt(x**2 + y**2 + z**2))
 
-# sorts hits by layer
+# categorizes barrel hits by radius
 events = [events[e] for e in range(10000)]
 for event in events:
     for collection in ["VTXIBCollection", "VTXOBCollection"]:
         for hit in event.get(collection):
+            if hit.isProducedBySecondary(): # mc particle not tracked
+                continue
             hits[radius(hit)].append(hit)
 
 ROOT.gStyle.SetPalette(ROOT.kRainBow)
@@ -59,12 +61,12 @@ for layer_index in range(5):
     hist = ROOT.TH1F("energy", f"Guinea Pig Layer {layer_index + 1} dE/dx", 70, 0, 700)
 
     for hit in hits[layer_radii[layer_index]]:
-        edep = 1000000*hit.getEDep()
-        path_length = hit.getPathLength()
+        edep = 1000000*hit.getEDep() # convert to keV
+        path_length = hit.getPathLength() # mm
         mc = hit.getMCParticle()
 
-        if hit.isProducedBySecondary() or mc.getGeneratorStatus() != 1:
-            continue
+        if mc.getGeneratorStatus() != 1:
+            continue # particles not input into geant
 
         hist.Fill(edep/path_length)
 
@@ -90,12 +92,12 @@ for layer_index in range(5):
 hist = ROOT.TH1F("energy", "Guinea Pig Disks dE/dx", 70, 0, 700)
 for event in events:
     for hit in event.get("VTXDCollection"):
-        edep = 1000000*hit.getEDep()
-        path_length = hit.getPathLength()
+        edep = 1000000*hit.getEDep() # convert to keV
+        path_length = hit.getPathLength() # mm
         mc = hit.getMCParticle()
 
         if hit.isProducedBySecondary() or mc.getGeneratorStatus() != 1:
-            continue
+            continue # mc particle not tracked or particle not input into geant
 
         hist.Fill(edep/path_length)
 
