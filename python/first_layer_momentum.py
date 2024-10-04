@@ -6,13 +6,13 @@ input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaP
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
-layer_radii = [14, 23, 34.5, 141, 316]
+layer_radii = [14, 23, 35, 141, 316]
 
 def radius(hit):
     """
     Calculates polar radius of particle.
     Inputs: hit, SimTrackerHit object.
-    Output: r, number representing polar radius in mm.
+    Output: r, int representing polar radius in mm.
     """
     true_radius = np.sqrt(hit.getPosition().x**2 + hit.getPosition().y**2)
     for r in layer_radii:
