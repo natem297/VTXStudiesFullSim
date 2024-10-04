@@ -81,7 +81,7 @@ for i in range(100):
 
     for coord in layer_radii:
         for hit in hits[coord]:
-            if hit.getEDep() < 0.000002:
+            if hit.isProducedBySecondary():
                 continue
 
             mc = hit.getMCParticle()
