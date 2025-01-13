@@ -1,14 +1,12 @@
 from podio import root_io
-import ROOT
-import math
 import numpy as np
 import os
 
-folder = "/eos/experiment/fcc/users/j/jaeyserm/VTXStudiesFullSim/CLD_wz3p6_ee_qq_ecm91p2"
+folder = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim/CLD_wz3p6_ee_qq_ecm91p2"
 files = os.listdir(folder)
 event_count = len(files)
 
-z = []
+r = []
 
 for filename in files[0:1]:
 
@@ -17,9 +15,9 @@ for filename in files[0:1]:
     podio_reader = root_io.Reader(input_file_path)
     events = podio_reader.get("events")
 
-    for event in events:
+    for event in events[0:5]:
 
-        for hit in event.get("VertexEndcapCollection"):
-            z.append(hit.getPosition().z)
+        for hit in event.get("VertexBarrelCollection"):
+            r.append(np.sqrt(hit.getPosition().x**2 + hit.getPosition().y**2))
 
-print(f"z: {sorted(z)}")
+print(f"r: {sorted(r)}")

@@ -4,12 +4,13 @@ import math
 import numpy as np
 import os
 
-layer_radii = [14, 23, 34.5, 141, 316]
-# max_z = 96
-max_z = 110
+# layer_radii = [14, 23, 34.5, 141, 316] # IDEA approximate layer radii
+# max_z = 96 # IDEA first layer
+
+max_z = 110 # CLD first layer
+layer_radii = [14, 36, 58] # CLD approximate layer radii
+
 z_step = 2
-
-
 
 def phi(x,y):
     """
@@ -42,7 +43,7 @@ def radius(hit):
     for r in layer_radii:
         if abs(true_radius-r) < 3:
             return r
-    # raise ValueError(f"Not close enough to any of the layers {np.sqrt(true_radius)}")
+    raise ValueError(f"Not close enough to any of the layers {true_radius}")
 
 folder = "/eos/experiment/fcc/users/j/jaeyserm/VTXStudiesFullSim/CLD_wz3p6_ee_qq_ecm91p2"
 files = os.listdir(folder)
@@ -53,6 +54,7 @@ hit_map = {z: {azimuthal: 0 for azimuthal in range(0, 360, 3)} \
 hit_map_phi = {azimuthal: 0 for azimuthal in range(0, 360, 3)}
 hit_map_theta = {polar: 0 for polar in range(0, 180, 3)}
 
+out_bounds = 0
 for filename in files:
 
     print(f"starting {filename}")
@@ -72,6 +74,7 @@ for filename in files:
             z = hit.getPosition().z
 
             if abs(z) > max_z:
+                out_bounds += 1
                 continue
 
             hit_map[int((z // z_step) * z_step)][int((ph // 3) * 3)] += 1
