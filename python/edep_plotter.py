@@ -3,12 +3,16 @@ import ROOT
 import numpy as np
 import math
 
-input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaPig_andrea_Apr2024/sim_boost_bfield_k4geo_version_Geant4TrackerAction_edep0/electronGun/egun_10GeV_10k_Geant4TrackerAction_edep0.root"
-# input_file_path = "/eos/experiment/fcc/users/b/brfranco/background_files/guineaPig_andrea_Apr2024/sim_boost_bfield_k4geo_version_Geant4TrackerAction_edep0/IDEA_01_v03_pairs_all.root"
+##########################################################################################
+# this file is for plotting the energy deposited (dE/dx) in each layer
+##########################################################################################
+
+input_file_path = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim"
 podio_reader = root_io.Reader(input_file_path)
 
 events = podio_reader.get("events")
-layer_radii = [14, 23, 35, 141, 316] # approximate r values of barrels
+layer_radii = [14, 23, 34.5, 141, 316] # IDEA approximate layer radii
+# layer_radii = [14, 36, 58] # CLD approximate layer radii
 hits = {r: [] for r in layer_radii}
 
 def radius(hit):
@@ -56,8 +60,7 @@ for event in events:
 ROOT.gStyle.SetPalette(ROOT.kRainBow)
 
 # creates histogram for each layer
-for layer_index in range(5):
-    cos_map_hist = ROOT.TH2F("events", f"Guinea Pig Layer {layer_index + 1} dE/dx and Cosine Theta", 100, -1, 1, 70, 0, 700)
+for layer_index in range(len(layer_radii)):
     hist = ROOT.TH1F("energy", f"Guinea Pig Layer {layer_index + 1} dE/dx", 70, 0, 700)
 
     for hit in hits[layer_radii[layer_index]]:
