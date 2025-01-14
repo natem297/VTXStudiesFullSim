@@ -55,7 +55,7 @@ for file_num in range(20):
             #     continue
             # cells[hit.getCellID()][file_num] += 1
 
-# pix_per_mod = 430080
+# pix_per_mod = 430080 # IDEA
 # module_hit_averages = [np.mean(cells[mod]) for mod in cells.keys()]
 # max_hits = max(module_hit_averages)
 # avg_hits = np.mean(module_hit_averages)
