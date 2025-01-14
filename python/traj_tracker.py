@@ -4,12 +4,19 @@ import numpy as np
 import math
 import os
 
-layer_radii = [14, 36, 58] # approximate r values of barrels
+# IDEA
+# layer_radii = [14, 23, 34.5, 141, 316] # approximate layer radii
+
+# comp_index_dict = {0: "ib", 1: "ib", 2: "ib", 3: "ob", 4: "ob", \
+#                     5: "ld", 6: "ld", 7: "ld", 8: "rd", 9: "rd", 10: "rd"}
+
+# CLD
+layer_radii = [14, 36, 58] # approximate layer radii
 disk_z = [-300, -230, -160, 160, 230, 300] # approximate z values of disks
-component_coords = layer_radii + disk_z
-# maps subdetector index to sub detector (inner barrel, outer barrel, left disks, right disks)
 comp_index_dict = {0: "ib", 1: "ib", 2: "ib", 3: "ld", 4: "ld", 5: "ld", \
                     6: "rd", 7: "rd", 8: "rd"}
+
+component_coords = layer_radii + disk_z
 
 def radius(hit):
     """
@@ -66,10 +73,11 @@ def trajectory_length(start_comp, mc_particle):
         traj_lengths: dict, mapping each subdetector (ib, ob, ld, rd) to the number of hits
             in that subdetector.
     """
-    traj_lengths = {"ib": 0, "ld": 0, "rd": 0, "total": 1}
+    # traj_lengths = {"total": 0, "ld": 1, "rd": 2, "ib": 3, "ob": 4} # IDEA
+    traj_lengths = {"total": 0, "ld": 1, "rd": 2, "ib": 3} # CLD
     traj_lengths[comp_index_dict[start_comp]] += 1 # adds 1 to starting subdetector
     # searches through remaining components for mc match
-    for comp_index in range(start_comp + 1, 9):
+    for comp_index in range(start_comp + 1, len(component_coords)):
         for hit in hits[component_coords[comp_index]]:
             if hit.getMCParticle() == mc_particle:
                 traj_lengths[comp_index_dict[comp_index]] += 1
@@ -81,7 +89,7 @@ def trajectory_length(start_comp, mc_particle):
 thetas = {i: [] for i in range(0,180,3)}
 phis = {j: [] for j in range(0,360,3)}
 
-folder = "/eos/experiment/fcc/users/j/jaeyserm/VTXStudiesFullSim/CLD_guineaPig_andrea_June2024_v23"
+folder = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim/"
 files = os.listdir(folder)
 file_count = len(files)
 
@@ -92,25 +100,23 @@ for filename in files:
     podio_reader = root_io.Reader(input_file_path)
     events = podio_reader.get("events")
 
+    # sorts hits by layer and disk
     for event in events:
         hits = {coord: [] for coord in component_coords}
 
         for collection in ["VertexBarrelCollection", "VertexEndcapCollection"]:
             for hit in event.get(collection):
-                if hit.isProducedBySecondary():
+                if hit.isProducedBySecondary(): # mc particle not tracked
                     continue
 
                 if collection != "VertexEndcapCollection":
                     hits[radius(hit)].append(hit)
                 else:
-                    try:
-                        hits[z_coord(hit)].append(hit)
-                    except ValueError:
-                        continue
+                    hits[z_coord(hit)].append(hit)
 
         visited_mc = []
 
-        for comp_index in range(9):
+        for comp_index in range(len(component_coords)):
             for hit in hits[component_coords[comp_index]]:
 
                 mc = hit.getMCParticle()
@@ -129,81 +135,95 @@ for filename in files:
                 thetas[polar].append(list(traj_lengths.values()))
                 phis[azimuthal].append(list(traj_lengths.values()))
 
+# title = "IDEA Components Crossed"
+title = "CLD Components Crossed"
+
 # creates theta hist objects for each subdetector and plots them
-thetas_hist_ib = ROOT.TH1F("Barrel", "CLD Components Crossed", 60, 0, 180)
-thetas_hist_ld = ROOT.TH1F("Left Disks", "CLD Components Crossed", 60, 0, 180)
-thetas_hist_rd = ROOT.TH1F("Right Disks", "CLD Components Crossed", 60, 0, 180)
-thetas_hist_total = ROOT.TH1F("Total", "Guinea Pig CLD Components Crossed", 60, 0, 180)
+thetas_hist_total = ROOT.TH1F("Total", title, 60, 0, 180)
+thetas_hist_ld = ROOT.TH1F("Left Disks", title, 60, 0, 180)
+thetas_hist_rd = ROOT.TH1F("Right Disks", title, 60, 0, 180)
+thetas_hist_ib = ROOT.TH1F("Inner Barrel", title, 60, 0, 180)
+# thetas_hist_ob = ROOT.TH1F("Outer Barrel", title, 60, 0, 180)
 
 for i in range(0,180,3):
     if not thetas[i]: # for theta values with no hits
-        thetas_hist_ib.SetBinContent((i//3) + 1, 0)
+        thetas_hist_total.SetBinContent((i//3) + 1, 0)
         thetas_hist_ld.SetBinContent((i//3) + 1, 0)
         thetas_hist_rd.SetBinContent((i//3) + 1, 0)
-        thetas_hist_total.SetBinContent((i//3) + 1, 0)
+        thetas_hist_ib.SetBinContent((i//3) + 1, 0)
+        # thetas_hist_ob.SetBinContent((i//3) + 1, 0)
     else:
-        thetas_hist_ib.SetBinContent((i//3) + 1, np.mean([lengths[0] for lengths in thetas[i]]))
+        thetas_hist_total.SetBinContent((i//3) + 1, np.mean([lengths[0] for lengths in thetas[i]]))
         thetas_hist_ld.SetBinContent((i//3) + 1, np.mean([lengths[1] for lengths in thetas[i]]))
         thetas_hist_rd.SetBinContent((i//3) + 1, np.mean([lengths[2] for lengths in thetas[i]]))
-        thetas_hist_total.SetBinContent((i//3) + 1, np.mean([lengths[3] for lengths in thetas[i]]))
+        thetas_hist_ib.SetBinContent((i//3) + 1, np.mean([lengths[3] for lengths in thetas[i]]))
+        # thetas_hist_ob.SetBinContent((i//3) + 1, np.mean([lengths[4] for lengths in thetas[i]]))
 
 thetas_hist_total.SetXTitle("Polar Angle (deg)")
 thetas_hist_total.SetYTitle("Average Number of Components Crossed")
 thetas_hist_total.SetStats(0)
 
-thetas_hist_ib.SetLineColor(ROOT.kRed)
+thetas_hist_total.SetLineColor(ROOT.kBlack)
 thetas_hist_ld.SetLineColor(ROOT.kGreen)
 thetas_hist_rd.SetLineColor(ROOT.kYellow)
-thetas_hist_total.SetLineColor(ROOT.kBlack)
+thetas_hist_ib.SetLineColor(ROOT.kRed)
+# thetas_hist_ob.SetLineColor(ROOT.kBlue)
 
 thetas_legend = ROOT.TLegend(0.4, 0.62, 0.6, 0.75)
 thetas_legend.AddEntry(thetas_hist_total, "Total", "l")
-thetas_legend.AddEntry(thetas_hist_ib, "Barrel", "l")
 thetas_legend.AddEntry(thetas_hist_ld, "Left Disks", "l")
 thetas_legend.AddEntry(thetas_hist_rd, "Right Disks", "l")
+thetas_legend.AddEntry(thetas_hist_ib, "Inner Barrel", "l")
+# thetas_legend.AddEntry(thetas_hist_ob, "Outer Barrel", "l")
 
-thetas_canvas = ROOT.TCanvas("Theta Hits", "CLD Components Crossed")
+thetas_canvas = ROOT.TCanvas("Theta Hits", title)
 thetas_hist_total.Draw("hist")
-thetas_hist_ib.Draw("same")
 thetas_hist_ld.Draw("same")
 thetas_hist_rd.Draw("same")
+thetas_hist_ib.Draw("same")
+# thetas_hist_ob.Draw("same")
 thetas_legend.Draw()
 thetas_canvas.Update()
 thetas_canvas.SaveAs("../plots/cld/cld_theta_hits_gp_combined.png")
 
 # creates phi hist objects for each subdetector and plots them
-phis_hist_ib = ROOT.TH1F("Barrel", "CLD Components Crossed", 120, 0, 360)
-phis_hist_ld = ROOT.TH1F("Left Disks", "CLD Components Crossed", 120, 0, 360)
-phis_hist_rd = ROOT.TH1F("Right Disks", "CLD Components Crossed", 120, 0, 360)
-phis_hist_total = ROOT.TH1F("Total", "Guinea Pig CLD Components Crossed", 120, 0, 360)
+phis_hist_total = ROOT.TH1F("Total", title, 120, 0, 360)
+phis_hist_ld = ROOT.TH1F("Left Disks", title, 120, 0, 360)
+phis_hist_rd = ROOT.TH1F("Right Disks", title, 120, 0, 360)
+phis_hist_ib = ROOT.TH1F("Inner Barrel", title, 120, 0, 360)
+# phis_hist_ob = ROOT.TH1F("Outer Barrel", title, 120, 0, 360)
 
 for i in range(0,360,3):
-    phis_hist_ib.SetBinContent((i//3) + 1, np.mean([lengths[0] for lengths in phis[i]]))
+    phis_hist_total.SetBinContent((i//3) + 1, np.mean([lengths[0] for lengths in phis[i]]))
     phis_hist_ld.SetBinContent((i//3) + 1, np.mean([lengths[1] for lengths in phis[i]]))
     phis_hist_rd.SetBinContent((i//3) + 1, np.mean([lengths[2] for lengths in phis[i]]))
-    phis_hist_total.SetBinContent((i//3) + 1, np.mean([lengths[3] for lengths in phis[i]]))
+    phis_hist_ib.SetBinContent((i//3) + 1, np.mean([lengths[3] for lengths in phis[i]]))
+    # phis_hist_ob.SetBinContent((i//3) + 1, np.mean([lengths[4] for lengths in phis[i]]))
 
 phis_hist_total.SetXTitle("Azimuthal Angle (deg)")
 phis_hist_total.SetYTitle("Average Number of Components Crossed")
 phis_hist_total.SetMinimum(0)
 phis_hist_total.SetStats(0)
 
-phis_hist_ib.SetLineColor(ROOT.kRed)
+phis_hist_total.SetLineColor(ROOT.kBlack)
 phis_hist_ld.SetLineColor(ROOT.kGreen)
 phis_hist_rd.SetLineColor(ROOT.kYellow)
-phis_hist_total.SetLineColor(ROOT.kBlack)
+phis_hist_ib.SetLineColor(ROOT.kRed)
+# phis_hist_ob.SetLineColor(ROOT.kBlue)
 
 phis_legend = ROOT.TLegend(0.4, 0.57, 0.6, 0.7)
 phis_legend.AddEntry(phis_hist_total, "Total", "l")
-phis_legend.AddEntry(phis_hist_ib, "Barrel", "l")
 phis_legend.AddEntry(phis_hist_ld, "Left Disks", "l")
 phis_legend.AddEntry(phis_hist_rd, "Right Disks", "l")
+phis_legend.AddEntry(phis_hist_ib, "Inner Barrel", "l")
+# phis_legend.AddEntry(phis_hist_ob, "Outer Barrel", "l")
 
-phis_canvas = ROOT.TCanvas("Phi Hits", "CLD Components Crossed")
+phis_canvas = ROOT.TCanvas("Phi Hits", title)
 phis_hist_total.Draw("hist")
-phis_hist_ib.Draw("same")
 phis_hist_ld.Draw("same")
 phis_hist_rd.Draw("same")
+phis_hist_ib.Draw("same")
+# phis_hist_ob.Draw("same")
 phis_legend.Draw()
 phis_canvas.Update()
 phis_canvas.SaveAs("../plots/cld/cld_phi_hits_gp_combined.png")

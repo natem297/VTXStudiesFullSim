@@ -4,12 +4,18 @@ import math
 import numpy as np
 import os
 
-layer_radii = [14, 23, 34.5, 141, 316]
-# max_z = 96
-max_z = 110
+##########################################################################################
+# this file is for plotting the number of hits in a 2D map of phi and z and purely as a
+# function of phi and theta
+##########################################################################################
+
+# layer_radii = [14, 23, 34.5, 141, 316] # IDEA approximate layer radii
+# max_z = 96 # IDEA first layer
+
+layer_radii = [14, 36, 58] # CLD approximate layer radii
+max_z = 110 # CLD first layer
+
 z_step = 2
-
-
 
 def phi(x,y):
     """
@@ -42,11 +48,11 @@ def radius(hit):
     for r in layer_radii:
         if abs(true_radius-r) < 3:
             return r
-    # raise ValueError(f"Not close enough to any of the layers {np.sqrt(true_radius)}")
+    raise ValueError(f"Not close enough to any of the layers {true_radius}")
 
-folder = "/eos/experiment/fcc/users/j/jaeyserm/VTXStudiesFullSim/CLD_wz3p6_ee_qq_ecm91p2"
+folder = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim/"
 files = os.listdir(folder)
-file_count = len(files)
+event_count = 100 * len(files)
 
 hit_map = {z: {azimuthal: 0 for azimuthal in range(0, 360, 3)} \
                 for z in range(-max_z, max_z, z_step)}
@@ -61,9 +67,9 @@ for filename in files:
 
     events = podio_reader.get("events")
     for event in events:
-
+        # iterates through hits and adds position to each map
         for hit in event.get("VertexBarrelCollection"):
-
+            # mc particle not tracked or hit not in first layer
             if hit.isProducedBySecondary() or radius(hit) != 14:
                 continue
 
@@ -71,18 +77,18 @@ for filename in files:
             th = theta(hit.getPosition().x, hit.getPosition().y, hit.getPosition().z) * (180 / math.pi)
             z = hit.getPosition().z
 
-            if abs(z) > max_z:
+            if abs(z) > max_z: # hit out of map range
                 continue
 
             hit_map[int((z // z_step) * z_step)][int((ph // 3) * 3)] += 1
             hit_map_phi[int(ph // 3) * 3] += 1
             hit_map_theta[int(th // 3) * 3] += 1
 
+# change by event type
 save_location = "../plots/cld/z_nox/cld_z_nox"
 title = "CLD No Xing Z -> Hadrons Layer 1 Hits/BX"
-event_count = 100 * file_count
 
-
+# 2D hit map
 hist = ROOT.TH2F("hit map", f"Layer 1 Hits", (2 * max_z) // z_step, -max_z, max_z, 120, 0, 360)
 hist.SetTitle(f"{title};z (mm); Azimuthal Angle (deg)")
 
@@ -98,6 +104,7 @@ hist.Draw("colz")
 canvas.Update()
 canvas.SaveAs(f"{save_location}_hit_map.png")
 
+# phi histogram
 hist_phi = ROOT.TH1F("hit map", f"{title}", 120, 0, 360)
 hist_phi.GetXaxis().SetTitle("Phi (deg)")
 hist_phi.GetYaxis().SetTitle("Average Number of Hits")
@@ -113,6 +120,7 @@ hist_phi.Draw()
 canvas.Update()
 canvas.SaveAs(f"{save_location}_phi.png")
 
+# theta histogram
 hist_theta = ROOT.TH1F("hit map", f"{title}", 60, 0, 180)
 hist_theta.GetXaxis().SetTitle("Theta (deg)")
 hist_theta.GetYaxis().SetTitle("Average Number of Hits")
