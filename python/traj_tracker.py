@@ -6,7 +6,7 @@ import os
 
 # IDEA
 # layer_radii = [14, 23, 34.5, 141, 316] # approximate layer radii
-
+# disk_z = [-945, -635, -303, 303, 635, 945] # approximate z values of disks
 # comp_index_dict = {0: "ib", 1: "ib", 2: "ib", 3: "ob", 4: "ob", \
 #                     5: "ld", 6: "ld", 7: "ld", 8: "rd", 9: "rd", 10: "rd"}
 

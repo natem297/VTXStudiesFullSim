@@ -50,7 +50,7 @@ def radius(hit):
             return r
     raise ValueError(f"Not close enough to any of the layers {true_radius}")
 
-folder = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim/"
+folder = "/ceph/submit/data/group/fcc/ee/detector/VTXStudiesFullSim/IDEA_guineaPig_andrea_June2024_v23/"
 files = os.listdir(folder)
 event_count = 100 * len(files)
 
@@ -85,8 +85,8 @@ for filename in files:
             hit_map_theta[int(th // 3) * 3] += 1
 
 # change by event type
-save_location = "../plots/cld/z_nox/cld_z_nox"
-title = "CLD No Xing Z -> Hadrons Layer 1 Hits/BX"
+save_location = "../plots/cld/z_nominal/cld_z_nominal"
+title = "CLD Nominal Z -> Hadrons Layer 1 Hits/BX"
 
 # 2D hit map
 hist = ROOT.TH2F("hit map", f"Layer 1 Hits", (2 * max_z) // z_step, -max_z, max_z, 120, 0, 360)
